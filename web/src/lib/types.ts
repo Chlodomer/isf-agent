@@ -387,7 +387,7 @@ export type ChatMessage =
 
 // --- UI State ---
 
-export type ContextTab = "draft" | "learnings" | "compliance" | "interview";
+export type ContextTab = "operations" | "draft" | "learnings" | "compliance" | "interview";
 
 export interface UIState {
   contextPanelOpen: boolean;

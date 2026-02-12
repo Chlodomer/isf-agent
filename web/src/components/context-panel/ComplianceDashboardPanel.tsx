@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, X, AlertTriangle, RefreshCw } from "lucide-react";
+import { X, AlertTriangle, RefreshCw } from "lucide-react";
 import { useProposalStore } from "@/lib/store";
 
 export default function ComplianceDashboardPanel() {
@@ -79,8 +79,6 @@ export default function ComplianceDashboardPanel() {
         {[...categories].map((cat) => {
           const catFailed = failedByCategory[cat] || [];
           const catWarnings = warningsByCategory[cat] || [];
-          const catTotal = catFailed.length + catWarnings.length;
-          const catPassed = total > 0 ? Math.round((1 - catTotal / total) * total) : 0;
 
           return (
             <div key={cat}>

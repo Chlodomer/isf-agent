@@ -7,6 +7,7 @@ import NextActionBanner from "./NextActionBanner";
 import MessageThread from "./MessageThread";
 import SuggestedActionsBar from "./SuggestedActionsBar";
 import ChatInput from "./ChatInput";
+import WorkflowTransparencyDeck from "./WorkflowTransparencyDeck";
 
 interface MainChatProps {
   onAction: (action: string) => void;
@@ -45,7 +46,8 @@ export default function MainChat({ onAction }: MainChatProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 h-full">
+    <div className="flex-1 flex flex-col min-w-0 min-h-[45vh] lg:min-h-0 h-full rounded-2xl border border-white/70 bg-white/70 backdrop-blur-sm shadow-[0_20px_40px_-30px_rgba(2,28,54,0.45)]">
+      <WorkflowTransparencyDeck onAction={onAction} />
       <NextActionBanner text={nextActionText} />
       <MessageThread messages={messages} onAction={onAction} />
       <SuggestedActionsBar onAction={onAction} />

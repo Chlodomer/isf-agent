@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, X, AlertTriangle } from "lucide-react";
+import { X, AlertTriangle } from "lucide-react";
 import type { ComplianceIssue } from "@/lib/types";
 
 interface ComplianceReportCardProps {
