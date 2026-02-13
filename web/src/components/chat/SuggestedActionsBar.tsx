@@ -14,7 +14,7 @@ export default function SuggestedActionsBar({ onAction }: SuggestedActionsBarPro
   if (actions.length === 0) return null;
 
   return (
-    <div className="flex gap-2 px-4 py-2 overflow-x-auto border-t border-gray-100 bg-white">
+    <div className="flex gap-2 px-4 py-2 overflow-x-auto border-t border-[#dde6ea] bg-gradient-to-r from-white via-[#f6fafc] to-[#f3f7fa]">
       {actions.map((action: SuggestedAction) => (
         <button
           key={action.command}
@@ -24,7 +24,7 @@ export default function SuggestedActionsBar({ onAction }: SuggestedActionsBarPro
             ${
               action.variant === "approve"
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-800"
+                : "bg-white/90 text-slate-600 border-[#dbe2e7] hover:bg-[#f2f7fa] hover:text-slate-800"
             }
           `}
         >

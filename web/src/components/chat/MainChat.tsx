@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useProposalStore } from "@/lib/store";
 import { getNextActionText } from "@/lib/chat-actions";
 import { buildLocalAgentReply } from "@/lib/local-agent";
+import { fetchAssistantReply } from "@/lib/chat-backend";
 import { INTERVIEW_SECTIONS } from "@/lib/types";
 import NextActionBanner from "./NextActionBanner";
 import MessageThread from "./MessageThread";
@@ -18,7 +20,9 @@ export default function MainChat({ onAction }: MainChatProps) {
   const messages = useProposalStore((s) => s.messages);
   const phase = useProposalStore((s) => s.session.currentPhase);
   const interview = useProposalStore((s) => s.interview);
+  const researcherInfo = useProposalStore((s) => s.researcherInfo);
   const addMessage = useProposalStore((s) => s.addMessage);
+  const [isSending, setIsSending] = useState(false);
 
   // Compute next action text
   const interviewProgress = interview.currentSection
@@ -37,6 +41,8 @@ export default function MainChat({ onAction }: MainChatProps) {
   const nextActionText = getNextActionText(phase, interviewProgress);
 
   const handleSend = (content: string) => {
+    if (isSending) return;
+
     addMessage({
       id: `msg-${Date.now()}`,
       type: "text",
@@ -44,19 +50,52 @@ export default function MainChat({ onAction }: MainChatProps) {
       content,
     });
 
-    const localReply = buildLocalAgentReply(content);
+    const localReply = buildLocalAgentReply(content, {
+      name: researcherInfo.name,
+      affiliation: researcherInfo.department,
+    });
     if (localReply) {
       addMessage(localReply);
+      return;
     }
+
+    setIsSending(true);
+    void (async () => {
+      try {
+        const assistantContent = await fetchAssistantReply(messages, content, {
+          name: researcherInfo.name,
+          affiliation: researcherInfo.department,
+        });
+        addMessage({
+          id: `msg-${Date.now()}-assistant`,
+          type: "text",
+          role: "agent",
+          content: assistantContent,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Unexpected backend error.";
+        addMessage({
+          id: `msg-${Date.now()}-assistant-error`,
+          type: "text",
+          role: "agent",
+          content: `I couldn't complete the request: ${message}`,
+        });
+      } finally {
+        setIsSending(false);
+      }
+    })();
   };
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 min-h-[45vh] lg:min-h-0 h-full rounded-2xl border border-white/70 bg-white/70 backdrop-blur-sm shadow-[0_20px_40px_-30px_rgba(2,28,54,0.45)]">
+    <div className="flex-1 flex flex-col min-w-0 min-h-[45vh] lg:min-h-0 h-full rounded-2xl border border-[#dce6ea]/90 bg-gradient-to-b from-white/90 via-[#f8fbfc]/88 to-[#f4f8f9]/84 backdrop-blur-sm shadow-[0_24px_48px_-32px_rgba(20,40,66,0.38)]">
       <WorkflowTransparencyDeck onAction={onAction} />
       <NextActionBanner text={nextActionText} />
       <MessageThread messages={messages} onAction={onAction} />
       <SuggestedActionsBar onAction={onAction} />
-      <ChatInput onSend={handleSend} />
+      <ChatInput onSend={handleSend} disabled={isSending} />
     </div>
   );
 }

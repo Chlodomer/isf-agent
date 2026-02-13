@@ -38,6 +38,7 @@ interface ProposalStore {
 
   // Actions
   setPhase: (phase: Phase) => void;
+  setResearcherInfo: (info: Partial<ResearcherInfo>) => void;
   addMessage: (message: ChatMessage) => void;
   toggleContextPanel: () => void;
   setContextTab: (tab: ContextTab) => void;
@@ -189,6 +190,14 @@ export const useProposalStore = create<ProposalStore>((set) => ({
         ...state.session,
         currentPhase: phase,
         lastUpdated: new Date().toISOString(),
+      },
+    })),
+
+  setResearcherInfo: (info) =>
+    set((state) => ({
+      researcherInfo: {
+        ...state.researcherInfo,
+        ...info,
       },
     })),
 

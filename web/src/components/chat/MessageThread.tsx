@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { ChatMessage } from "@/lib/types";
+import ReactMarkdown from "react-markdown";
 import ChallengeCard from "./messages/ChallengeCard";
 import InterviewQuestionBlock from "./messages/InterviewQuestionBlock";
 import DraftReviewBlock from "./messages/DraftReviewBlock";
@@ -28,7 +29,18 @@ function TextMessage({ message }: { message: Extract<ChatMessage, { type: "text"
             : "bg-gray-100 text-gray-800 rounded-bl-md"
         }`}
       >
-        <p className="whitespace-pre-wrap">{message.content}</p>
+        <ReactMarkdown
+          components={{
+            p: ({ children }) => <p className="whitespace-pre-wrap">{children}</p>,
+            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+            em: ({ children }) => <em className="italic">{children}</em>,
+            ul: ({ children }) => <ul className="list-disc pl-5 space-y-1">{children}</ul>,
+            ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1">{children}</ol>,
+            li: ({ children }) => <li>{children}</li>,
+          }}
+        >
+          {message.content}
+        </ReactMarkdown>
       </div>
     </div>
   );
@@ -69,7 +81,7 @@ export default function MessageThread({ messages, onAction }: MessageThreadProps
   }, [messages.length]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-6">
+    <div className="flex-1 overflow-y-auto px-4 py-3 bg-gradient-to-b from-[#fbfdfd] via-[#f8fbfb] to-[#f5f9fa]">
       {messages.length === 0 && (
         <div className="flex items-center justify-center h-full text-gray-400 text-sm">
           Starting your grant writing session...
