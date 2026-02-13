@@ -30,6 +30,18 @@ If not found:
 
 ---
 
+### Step 0b: Refresh ISF Website Snapshot (Optional)
+
+When you need the latest grant-linked files and deadlines directly from ISF:
+
+```bash
+node scripts/fetch-isf-grants-docs.mjs
+```
+
+Use `.context/isf-grants-docs/manifest.json` as the master index for the downloaded site snapshot.
+
+---
+
 ### Step 1: Primary Source Search (only if local module not found)
 
 ```
