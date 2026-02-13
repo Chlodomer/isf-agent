@@ -6,9 +6,14 @@ import { DEMO_MESSAGES } from "@/lib/demo-data";
 import LeftRail from "@/components/left-rail/LeftRail";
 import MainChat from "@/components/chat/MainChat";
 import ContextPanel from "@/components/context-panel/ContextPanel";
+import OnboardingExperience from "@/components/onboarding/OnboardingExperience";
 import type { Phase } from "@/lib/types";
 import { buildLocalAgentReply } from "@/lib/local-agent";
+import { fetchAssistantReply } from "@/lib/chat-backend";
 import { Eye } from "lucide-react";
+
+const ONBOARDING_STORAGE_KEY = "isf.onboarding.completed";
+type OnboardingStatus = "checking" | "active" | "done";
 
 export default function ProposalWorkspace() {
   const contextPanelOpen = useProposalStore((s) => s.ui.contextPanelOpen);
@@ -16,6 +21,7 @@ export default function ProposalWorkspace() {
   const openContextPanel = useProposalStore((s) => s.openContextPanel);
   const messages = useProposalStore((s) => s.messages);
   const [demoLoaded, setDemoLoaded] = useState(false);
+  const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus | null>(null);
 
   // Seed welcome message on first load
   useEffect(() => {
@@ -38,9 +44,28 @@ export default function ProposalWorkspace() {
     []
   );
 
+  const completeOnboarding = useCallback(() => {
+    try {
+      window.localStorage.setItem(ONBOARDING_STORAGE_KEY, "true");
+    } catch {
+      // no-op: fallback to in-memory state only
+    }
+    setOnboardingStatus("done");
+  }, []);
+
+  const replayOnboarding = useCallback(() => {
+    setOnboardingStatus("active");
+  }, []);
+
   const handleAction = useCallback(
     (action: string) => {
-      if (action === "view-learnings" || action === "show-learnings" || action === "/show-learnings") {
+      if (action === "onboarding" || action === "/onboarding" || action === "replay-onboarding") {
+        replayOnboarding();
+      } else if (
+        action === "view-learnings" ||
+        action === "show-learnings" ||
+        action === "/show-learnings"
+      ) {
         openContextPanel("learnings");
       } else if (action === "open-draft" || action === "preview" || action === "/preview") {
         openContextPanel("draft");
@@ -66,17 +91,65 @@ export default function ProposalWorkspace() {
         const localReply = buildLocalAgentReply(content);
         if (localReply) {
           addMessage(localReply);
+          return;
         }
+
+        void (async () => {
+          try {
+            const assistantContent = await fetchAssistantReply(messages, content);
+            addMessage({
+              id: `action-assistant-${Date.now()}`,
+              type: "text",
+              role: "agent",
+              content: assistantContent,
+            });
+          } catch (error) {
+            const message =
+              error instanceof Error ? error.message : "Unexpected backend error.";
+            addMessage({
+              id: `action-assistant-error-${Date.now()}`,
+              type: "text",
+              role: "agent",
+              content: `I couldn't complete the request: ${message}`,
+            });
+          }
+        })();
       }
     },
-    [addMessage, openContextPanel]
+    [addMessage, openContextPanel, messages, replayOnboarding]
   );
 
+  const resolvedOnboardingStatus: OnboardingStatus =
+    onboardingStatus ??
+    (() => {
+      if (typeof window === "undefined") return "checking";
+      try {
+        return window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "true" ? "done" : "active";
+      } catch {
+        return "active";
+      }
+    })();
+
+  if (resolvedOnboardingStatus === "checking") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#f8f4ee_0%,#efe9df_100%)]">
+        <p className="text-sm font-medium text-[#6d5841]">Loading workspace...</p>
+      </div>
+    );
+  }
+
+  if (resolvedOnboardingStatus === "active") {
+    return <OnboardingExperience onComplete={completeOnboarding} />;
+  }
+
   return (
-    <div className="flex h-screen flex-col lg:flex-row gap-3 bg-transparent p-2 lg:p-3">
-      <LeftRail onPhaseClick={handlePhaseClick} onAction={handleAction} />
-      <MainChat onAction={handleAction} />
-      {contextPanelOpen && <ContextPanel />}
+    <div className="relative flex h-screen flex-col gap-3 bg-transparent p-2 lg:flex-row lg:p-3">
+      <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_20%_20%,rgba(88,139,131,0.10),transparent_45%),radial-gradient(circle_at_78%_18%,rgba(160,140,104,0.11),transparent_42%),radial-gradient(circle_at_30%_84%,rgba(103,129,157,0.10),transparent_44%)]" />
+      <div className="relative z-10 contents">
+        <LeftRail onPhaseClick={handlePhaseClick} onAction={handleAction} />
+        <MainChat onAction={handleAction} />
+        {contextPanelOpen && <ContextPanel />}
+      </div>
 
       {/* Demo mode toggle */}
       {!demoLoaded && (
