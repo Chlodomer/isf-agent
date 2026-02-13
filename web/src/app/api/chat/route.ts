@@ -7,6 +7,10 @@ interface IncomingMessage {
 
 interface ChatRequestBody {
   messages?: IncomingMessage[];
+  context?: {
+    name?: string;
+    affiliation?: string;
+  };
 }
 
 interface AnthropicContentBlock {
@@ -28,6 +32,28 @@ const SYSTEM_PROMPT = [
   "If the user needs options, provide at most 3 focused choices and recommend one.",
   "Ask at most one follow-up question when needed.",
 ].join(" ");
+
+function buildContextPrompt(context?: ChatRequestBody["context"]): string {
+  if (!context) return "";
+
+  const name = typeof context.name === "string" ? context.name.trim() : "";
+  const affiliation =
+    typeof context.affiliation === "string" ? context.affiliation.trim() : "";
+
+  const notes: string[] = [];
+  if (name) {
+    notes.push(
+      `The researcher's name is ${name}. Address them by name naturally in selected replies.`
+    );
+  }
+  if (affiliation) {
+    notes.push(
+      `Their departmental affiliation is ${affiliation}. Use this context when examples or framing are relevant.`
+    );
+  }
+
+  return notes.join(" ");
+}
 
 function isIncomingMessage(value: unknown): value is IncomingMessage {
   if (!value || typeof value !== "object") return false;
@@ -72,6 +98,8 @@ export async function POST(request: Request) {
   }
 
   const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514";
+  const contextPrompt = buildContextPrompt(body.context);
+  const systemPrompt = contextPrompt ? `${SYSTEM_PROMPT} ${contextPrompt}` : SYSTEM_PROMPT;
 
   const upstream = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -84,7 +112,7 @@ export async function POST(request: Request) {
       model,
       max_tokens: 1024,
       temperature: 0.4,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages,
     }),
   });

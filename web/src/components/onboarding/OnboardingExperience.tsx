@@ -4,8 +4,13 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 
+export interface OnboardingProfile {
+  name: string;
+  affiliation: string;
+}
+
 interface OnboardingExperienceProps {
-  onComplete: () => void;
+  onComplete: (profile: OnboardingProfile) => void;
 }
 
 interface OnboardingStep {
@@ -19,21 +24,22 @@ const STEPS: OnboardingStep[] = [
   {
     id: 1,
     title: "Welcome to the ISF Grant Assistant",
-    summary: "This onboarding takes about two minutes and unlocks the workspace at the end.",
+    summary: "This onboarding takes about two minutes and personalizes the workspace.",
     points: [
       "You will move through a short guided flow.",
-      "Each stage unlocks only after you type continue and press Continue.",
+      "First, type your name so the assistant can address you personally.",
+      "Later stages advance with the Continue button only.",
       "You can go back at any time during onboarding.",
     ],
   },
   {
     id: 2,
-    title: "How The Workflow Is Structured",
-    summary: "The assistant runs in seven phases from requirements through final assembly.",
+    title: "Tell Us Your Affiliation",
+    summary: "Share your departmental affiliation so guidance can be contextualized.",
     points: [
-      "Requirements and eligibility checks come first.",
-      "Interview and drafting phases collect and shape your proposal.",
-      "Compliance and final assembly ensure submission readiness.",
+      "Example: Department of Physics, Tel Aviv University.",
+      "This helps tailor recommendations and examples.",
+      "You can update this later if needed.",
     ],
   },
   {
@@ -70,12 +76,16 @@ const STEPS: OnboardingStep[] = [
 
 export default function OnboardingExperience({ onComplete }: OnboardingExperienceProps) {
   const [index, setIndex] = useState(0);
-  const [gateText, setGateText] = useState("");
+  const [name, setName] = useState("");
+  const [affiliation, setAffiliation] = useState("");
 
   const step = STEPS[index];
   const isFirst = index === 0;
+  const isAffiliationStep = index === 1;
   const isLast = index === STEPS.length - 1;
-  const gateSatisfied = gateText.trim().toLowerCase() === "continue";
+  const hasName = name.trim().length >= 2;
+  const hasAffiliation = affiliation.trim().length >= 2;
+  const gateSatisfied = isFirst ? hasName : isAffiliationStep ? hasAffiliation : true;
   const progress = useMemo(
     () => Math.round(((index + 1) / STEPS.length) * 100),
     [index]
@@ -85,18 +95,19 @@ export default function OnboardingExperience({ onComplete }: OnboardingExperienc
     if (!gateSatisfied) return;
 
     if (isLast) {
-      onComplete();
+      onComplete({
+        name: name.trim(),
+        affiliation: affiliation.trim(),
+      });
       return;
     }
 
     setIndex((current) => current + 1);
-    setGateText("");
   };
 
   const moveBack = () => {
     if (isFirst) return;
     setIndex((current) => current - 1);
-    setGateText("");
   };
 
   return (
@@ -144,16 +155,39 @@ export default function OnboardingExperience({ onComplete }: OnboardingExperienc
         </div>
 
         <div className="rounded-2xl border border-[#e2d3bd] bg-[#faf4ea] p-4">
-          <p className="text-sm font-medium text-[#6b543c]">
-            Type continue and then press {isLast ? "Enter Workspace" : "Continue"}.
-          </p>
-          <input
-            value={gateText}
-            onChange={(event) => setGateText(event.target.value)}
-            placeholder="Type: continue"
-            className="mt-3 w-full rounded-lg border border-[#d9c8b0] bg-white px-3 py-2 text-sm text-[#3f3223] outline-none transition-colors focus:border-[#be9f7f] focus:ring-2 focus:ring-[#d8bf9e]/40"
-            autoFocus
-          />
+          {isFirst ? (
+            <>
+              <p className="text-sm font-medium text-[#6b543c]">
+                Type your name, then press Continue.
+              </p>
+              <input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Your name"
+                className="mt-3 w-full rounded-lg border border-[#d9c8b0] bg-white px-3 py-2 text-sm text-[#3f3223] outline-none transition-colors focus:border-[#be9f7f] focus:ring-2 focus:ring-[#d8bf9e]/40"
+                autoFocus
+              />
+            </>
+          ) : isAffiliationStep ? (
+            <>
+              <p className="text-sm font-medium text-[#6b543c]">
+                Share your department or affiliation, then press Continue.
+              </p>
+              <input
+                value={affiliation}
+                onChange={(event) => setAffiliation(event.target.value)}
+                placeholder="Department / Affiliation"
+                className="mt-3 w-full rounded-lg border border-[#d9c8b0] bg-white px-3 py-2 text-sm text-[#3f3223] outline-none transition-colors focus:border-[#be9f7f] focus:ring-2 focus:ring-[#d8bf9e]/40"
+                autoFocus
+              />
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-medium text-[#6b543c]">
+                Press {isLast ? "Enter Workspace" : "Continue"} to proceed.
+              </p>
+            </>
+          )}
         </div>
 
         <div className="flex items-center justify-between gap-3">

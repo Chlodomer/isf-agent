@@ -1,17 +1,21 @@
 "use client";
 
 import { Sparkles, Upload, Clock, Compass } from "lucide-react";
+import { useProposalStore } from "@/lib/store";
 
 interface WelcomeCardProps {
   onAction?: (action: string) => void;
 }
 
 export default function WelcomeCard({ onAction }: WelcomeCardProps) {
+  const name = useProposalStore((s) => s.researcherInfo.name);
+  const greeting = name?.trim() ? `Welcome, ${name.trim()}` : "Welcome";
+
   return (
     <div className="my-4 bg-white rounded-lg border border-gray-200 shadow-sm">
       <div className="p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          Welcome to the ISF Grant Writing Assistant
+          {greeting} to the ISF Grant Writing Assistant
         </h2>
         <p className="text-sm text-gray-500 leading-relaxed mb-6">
           I&apos;ll help you prepare a competitive proposal for the Israel Science

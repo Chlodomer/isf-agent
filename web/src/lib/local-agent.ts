@@ -1,5 +1,10 @@
 import type { ChatMessage } from "./types";
 
+interface LocalAgentContext {
+  name?: string | null;
+  affiliation?: string | null;
+}
+
 function isOnboardingRequest(input: string): boolean {
   return (
     input === "/onboarding" ||
@@ -35,16 +40,21 @@ function isHelpRequest(input: string): boolean {
   return input === "/help" || input === "help";
 }
 
-export function getLocalAgentReply(rawInput: string): string | null {
+export function getLocalAgentReply(rawInput: string, context?: LocalAgentContext): string | null {
   const normalized = rawInput.trim().toLowerCase();
+  const namePrefix = context?.name?.trim() ? `${context.name.trim()}, ` : "";
+  const affiliationNote = context?.affiliation?.trim()
+    ? `Context: ${context.affiliation.trim()}.`
+    : null;
 
   if (isOnboardingRequest(normalized)) {
     return [
-      "Quick onboarding:",
+      `${namePrefix}quick onboarding:`,
       "1. Share your project summary and target grant track.",
       "2. Upload past proposals or reviewer feedback for better guidance.",
       "3. Use: /requirements, /learn-from-grant, /challenge, /preview, /status.",
       "4. For ISF docs, use /isf-docs. For process walkthrough, use /isf-process.",
+      ...(affiliationNote ? [affiliationNote] : []),
     ].join("\n");
   }
 
@@ -78,8 +88,8 @@ export function getLocalAgentReply(rawInput: string): string | null {
   return null;
 }
 
-export function buildLocalAgentReply(rawInput: string): ChatMessage | null {
-  const content = getLocalAgentReply(rawInput);
+export function buildLocalAgentReply(rawInput: string, context?: LocalAgentContext): ChatMessage | null {
+  const content = getLocalAgentReply(rawInput, context);
   if (!content) return null;
 
   return {

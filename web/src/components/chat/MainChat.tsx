@@ -20,6 +20,7 @@ export default function MainChat({ onAction }: MainChatProps) {
   const messages = useProposalStore((s) => s.messages);
   const phase = useProposalStore((s) => s.session.currentPhase);
   const interview = useProposalStore((s) => s.interview);
+  const researcherInfo = useProposalStore((s) => s.researcherInfo);
   const addMessage = useProposalStore((s) => s.addMessage);
   const [isSending, setIsSending] = useState(false);
 
@@ -49,7 +50,10 @@ export default function MainChat({ onAction }: MainChatProps) {
       content,
     });
 
-    const localReply = buildLocalAgentReply(content);
+    const localReply = buildLocalAgentReply(content, {
+      name: researcherInfo.name,
+      affiliation: researcherInfo.department,
+    });
     if (localReply) {
       addMessage(localReply);
       return;
@@ -58,7 +62,10 @@ export default function MainChat({ onAction }: MainChatProps) {
     setIsSending(true);
     void (async () => {
       try {
-        const assistantContent = await fetchAssistantReply(messages, content);
+        const assistantContent = await fetchAssistantReply(messages, content, {
+          name: researcherInfo.name,
+          affiliation: researcherInfo.department,
+        });
         addMessage({
           id: `msg-${Date.now()}-assistant`,
           type: "text",

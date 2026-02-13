@@ -5,6 +5,11 @@ interface ConversationMessage {
   content: string;
 }
 
+export interface ConversationContext {
+  name?: string | null;
+  affiliation?: string | null;
+}
+
 interface ChatApiSuccess {
   message: string;
 }
@@ -36,13 +41,23 @@ function toConversationMessages(
 
 export async function fetchAssistantReply(
   history: ChatMessage[],
-  newUserContent: string
+  newUserContent: string,
+  context?: ConversationContext
 ): Promise<string> {
+  const cleanContext =
+    context && (context.name?.trim() || context.affiliation?.trim())
+      ? {
+          name: context.name?.trim() || undefined,
+          affiliation: context.affiliation?.trim() || undefined,
+        }
+      : undefined;
+
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       messages: toConversationMessages(history, newUserContent),
+      context: cleanContext,
     }),
   });
 

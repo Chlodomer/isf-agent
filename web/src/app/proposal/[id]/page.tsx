@@ -7,18 +7,22 @@ import LeftRail from "@/components/left-rail/LeftRail";
 import MainChat from "@/components/chat/MainChat";
 import ContextPanel from "@/components/context-panel/ContextPanel";
 import OnboardingExperience from "@/components/onboarding/OnboardingExperience";
+import type { OnboardingProfile } from "@/components/onboarding/OnboardingExperience";
 import type { Phase } from "@/lib/types";
 import { buildLocalAgentReply } from "@/lib/local-agent";
 import { fetchAssistantReply } from "@/lib/chat-backend";
 import { Eye } from "lucide-react";
 
 const ONBOARDING_STORAGE_KEY = "isf.onboarding.completed";
+const ONBOARDING_PROFILE_KEY = "isf.onboarding.profile";
 type OnboardingStatus = "checking" | "active" | "done";
 
 export default function ProposalWorkspace() {
   const contextPanelOpen = useProposalStore((s) => s.ui.contextPanelOpen);
   const addMessage = useProposalStore((s) => s.addMessage);
   const openContextPanel = useProposalStore((s) => s.openContextPanel);
+  const researcherInfo = useProposalStore((s) => s.researcherInfo);
+  const setResearcherInfo = useProposalStore((s) => s.setResearcherInfo);
   const messages = useProposalStore((s) => s.messages);
   const [demoLoaded, setDemoLoaded] = useState(false);
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus | null>(null);
@@ -29,6 +33,23 @@ export default function ProposalWorkspace() {
       addMessage({ id: "welcome-1", type: "welcome", role: "agent" });
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const rawProfile = window.localStorage.getItem(ONBOARDING_PROFILE_KEY);
+      if (!rawProfile) return;
+      const profile = JSON.parse(rawProfile) as Partial<OnboardingProfile>;
+      if (typeof profile.name === "string" && profile.name.trim()) {
+        setResearcherInfo({ name: profile.name.trim() });
+      }
+      if (typeof profile.affiliation === "string" && profile.affiliation.trim()) {
+        setResearcherInfo({ department: profile.affiliation.trim() });
+      }
+    } catch {
+      // no-op: profile context is optional
+    }
+  }, [setResearcherInfo]);
 
   const loadDemo = useCallback(() => {
     if (demoLoaded) return;
@@ -44,18 +65,40 @@ export default function ProposalWorkspace() {
     []
   );
 
-  const completeOnboarding = useCallback(() => {
-    try {
-      window.localStorage.setItem(ONBOARDING_STORAGE_KEY, "true");
-    } catch {
-      // no-op: fallback to in-memory state only
-    }
-    setOnboardingStatus("done");
-  }, []);
+  const completeOnboarding = useCallback(
+    (profile: OnboardingProfile) => {
+      const cleanedProfile = {
+        name: profile.name.trim(),
+        affiliation: profile.affiliation.trim(),
+      };
+
+      setResearcherInfo({
+        name: cleanedProfile.name || null,
+        department: cleanedProfile.affiliation || null,
+      });
+
+      try {
+        window.localStorage.setItem(ONBOARDING_STORAGE_KEY, "true");
+        window.localStorage.setItem(ONBOARDING_PROFILE_KEY, JSON.stringify(cleanedProfile));
+      } catch {
+        // no-op: fallback to in-memory state only
+      }
+      setOnboardingStatus("done");
+    },
+    [setResearcherInfo]
+  );
 
   const replayOnboarding = useCallback(() => {
     setOnboardingStatus("active");
   }, []);
+
+  const conversationContext = useCallback(
+    () => ({
+      name: researcherInfo.name,
+      affiliation: researcherInfo.department,
+    }),
+    [researcherInfo.department, researcherInfo.name]
+  );
 
   const handleAction = useCallback(
     (action: string) => {
@@ -88,7 +131,7 @@ export default function ProposalWorkspace() {
           content,
         });
 
-        const localReply = buildLocalAgentReply(content);
+        const localReply = buildLocalAgentReply(content, conversationContext());
         if (localReply) {
           addMessage(localReply);
           return;
@@ -96,7 +139,11 @@ export default function ProposalWorkspace() {
 
         void (async () => {
           try {
-            const assistantContent = await fetchAssistantReply(messages, content);
+            const assistantContent = await fetchAssistantReply(
+              messages,
+              content,
+              conversationContext()
+            );
             addMessage({
               id: `action-assistant-${Date.now()}`,
               type: "text",
@@ -116,7 +163,7 @@ export default function ProposalWorkspace() {
         })();
       }
     },
-    [addMessage, openContextPanel, messages, replayOnboarding]
+    [addMessage, conversationContext, openContextPanel, messages, replayOnboarding]
   );
 
   const resolvedOnboardingStatus: OnboardingStatus =
