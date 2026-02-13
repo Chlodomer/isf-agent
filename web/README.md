@@ -16,6 +16,19 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Conversational Backend Setup
+
+The chat UI now calls `POST /api/chat` for free-form conversation.
+Set the following environment variables before running `npm run dev`:
+
+```bash
+export ANTHROPIC_API_KEY="your_claude_api_key_here"
+# optional (defaults to claude-sonnet-4-20250514)
+export ANTHROPIC_MODEL="claude-sonnet-4-20250514"
+```
+
+Without `ANTHROPIC_API_KEY`, the app will still load but conversation requests will return a configuration error.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

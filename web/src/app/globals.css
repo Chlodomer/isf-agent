@@ -15,9 +15,12 @@ html {
 body {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 15% -10%, #c4f2e6 0%, transparent 45%),
-    radial-gradient(circle at 85% -10%, #fff4d6 0%, transparent 40%),
-    linear-gradient(180deg, #f8fafb 0%, #f1f4f5 100%);
+    radial-gradient(circle at 12% -12%, #c9e5d6 0%, transparent 42%),
+    radial-gradient(circle at 88% -8%, #f4dfbf 0%, transparent 40%),
+    radial-gradient(circle at -8% 75%, #e9dcc8 0%, transparent 44%),
+    radial-gradient(circle at 92% 88%, #ead8cf 0%, transparent 42%),
+    linear-gradient(180deg, #f9f6f2 0%, #f1ece6 100%);
+  background-attachment: fixed;
   color: var(--color-foreground);
   font-family: var(--font-sans);
 }

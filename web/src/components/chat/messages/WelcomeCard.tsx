@@ -49,14 +49,14 @@ export default function WelcomeCard({ onAction }: WelcomeCardProps) {
 
           <button
             onClick={() => onAction?.("upload-first")}
-            className="w-full flex items-center gap-4 p-4 rounded-lg border-2 border-purple-200 bg-purple-50 hover:bg-purple-100 transition-colors text-left"
+            className="w-full flex items-center gap-4 p-4 rounded-lg border-2 border-orange-200 bg-orange-50 hover:bg-orange-100 transition-colors text-left"
           >
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-              <Upload size={20} className="text-purple-600" />
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+              <Upload size={20} className="text-orange-700" />
             </div>
             <div>
-              <p className="font-medium text-purple-800">Upload Past Proposals First</p>
-              <p className="text-sm text-purple-600">
+              <p className="font-medium text-orange-900">Upload Past Proposals First</p>
+              <p className="text-sm text-orange-700">
                 Share past proposals so I can learn from them
               </p>
             </div>

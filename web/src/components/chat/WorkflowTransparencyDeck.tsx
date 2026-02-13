@@ -276,52 +276,62 @@ export default function WorkflowTransparencyDeck({ onAction }: WorkflowTranspare
 
   const latestAgentUpdate = getLatestAgentUpdate(messages);
 
+  if (!expanded) {
+    return (
+      <section className="mx-4 mt-3 flex-shrink-0 rounded-xl border border-teal-200/80 bg-white/90 shadow-[0_12px_28px_-26px_rgba(3,60,73,0.55)]">
+        <div className="flex items-center justify-between gap-3 px-3 py-2.5 sm:px-4">
+          <div className="flex min-w-0 items-center gap-2 text-xs text-slate-700">
+            <Radar size={12} className="text-teal-700" />
+            <span className="truncate">
+              Phase {phase}: {PHASE_LABELS[phase]} - {phaseProgress}% complete
+            </span>
+          </div>
+          <button
+            onClick={() => setExpanded(true)}
+            className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            Open dashboard
+            <ChevronDown size={12} />
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section className="mx-4 mt-4 flex-shrink-0 rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white via-[#f6fbff] to-[#effaf4] shadow-[0_18px_45px_-30px_rgba(3,60,73,0.45)]">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-teal-100 px-4 py-4 sm:px-5">
+    <section className="mx-4 mt-3 flex-shrink-0 rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white via-[#f6fbff] to-[#effaf4] shadow-[0_18px_45px_-30px_rgba(3,60,73,0.45)]">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-teal-100 px-4 py-3 sm:px-5">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700/80">Faculty Command Deck</p>
-          <h2 className="font-display mt-1 text-lg text-slate-900">Transparent process view</h2>
-          <p className="mt-1 text-sm text-slate-600">Every step, active AI process, and submission artifact in one place.</p>
+          <h2 className="font-display mt-0.5 text-base text-slate-900">Transparent process view</h2>
         </div>
         <button
-          onClick={() => setExpanded((current) => !current)}
+          onClick={() => setExpanded(false)}
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
         >
-          {expanded ? "Hide details" : "Show details"}
-          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          Hide details
+          <ChevronUp size={14} />
         </button>
       </div>
 
-      <div
-        className={`space-y-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4 ${
-          expanded ? "max-h-[36vh] overflow-y-auto" : ""
-        }`}
-      >
-        {expanded ? (
-          <div className="rounded-xl border border-slate-200 bg-white/90 p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
-                <Radar size={13} />
-                Phase {phase}: {PHASE_LABELS[phase]}
-              </div>
-              <div className="text-xs text-slate-500">Overall completion: {phaseProgress}%</div>
+      <div className="max-h-[34vh] space-y-4 overflow-y-auto px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+        <div className="rounded-xl border border-slate-200 bg-white/90 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
+              <Radar size={13} />
+              Phase {phase}: {PHASE_LABELS[phase]}
             </div>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-teal-500 via-cyan-500 to-emerald-500 transition-all"
-                style={{ width: `${Math.max(phaseProgress, 6)}%` }}
-              />
-            </div>
+            <div className="text-xs text-slate-500">Overall completion: {phaseProgress}%</div>
           </div>
-        ) : (
-          <div className="rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-xs text-slate-600">
-            Phase {phase}: {PHASE_LABELS[phase]} • {phaseProgress}% complete
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-teal-500 via-cyan-500 to-emerald-500 transition-all"
+              style={{ width: `${Math.max(phaseProgress, 6)}%` }}
+            />
           </div>
-        )}
+        </div>
 
-        {expanded && (
-          <div className="grid gap-3 xl:grid-cols-3">
+        <div className="grid gap-3 xl:grid-cols-3">
             <article className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="mb-3 flex items-center gap-2 text-slate-800">
                 <Bot size={16} className="text-teal-700" />
@@ -397,7 +407,6 @@ export default function WorkflowTransparencyDeck({ onAction }: WorkflowTranspare
               </div>
             </article>
           </div>
-        )}
 
         <div className="flex flex-wrap gap-2">
           <button

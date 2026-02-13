@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Paperclip, ArrowUp } from "lucide-react";
 
 interface ChatInputProps {
@@ -14,6 +14,12 @@ export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputP
   const [isDragOver, setIsDragOver] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!disabled) {
+      textareaRef.current?.focus();
+    }
+  }, [disabled]);
 
   const handleSubmit = useCallback(() => {
     const trimmed = value.trim();
@@ -49,7 +55,7 @@ export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputP
 
   return (
     <div
-      className="relative border-t border-gray-200 bg-white"
+      className="relative border-t border-[#d8e1e5] bg-gradient-to-r from-white via-[#f7fafb] to-[#f3f7f9]"
       onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
       onDragLeave={() => setIsDragOver(false)}
       onDrop={handleDrop}
@@ -65,7 +71,7 @@ export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputP
       <div className="flex items-end gap-2 p-3">
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+          className="flex-shrink-0 p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-lg hover:bg-[#edf3f6]"
           aria-label="Attach file"
         >
           <Paperclip size={18} />
@@ -81,13 +87,14 @@ export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputP
 
         <textarea
           ref={textareaRef}
+          autoFocus
           value={value}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
           placeholder="Type your message..."
           disabled={disabled}
           rows={1}
-          className="flex-1 resize-none border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 disabled:opacity-50 bg-gray-50"
+          className="flex-1 resize-none border border-[#d8e2e6] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 disabled:opacity-50 bg-[#f8fbfc]"
         />
 
         <button

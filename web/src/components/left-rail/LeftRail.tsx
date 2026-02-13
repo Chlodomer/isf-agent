@@ -18,9 +18,9 @@ export default function LeftRail({ onPhaseClick, onAction }: LeftRailProps) {
   const completionPercent = Math.round(((phase - 1) / 7) * 100);
 
   return (
-    <aside className="w-full lg:w-[17rem] xl:w-[18rem] max-h-[38vh] lg:max-h-none flex-shrink-0 bg-white/85 border border-white/70 lg:border-slate-200 rounded-2xl shadow-[0_18px_45px_-35px_rgba(8,31,62,0.45)] flex flex-col h-auto lg:h-full overflow-hidden">
+    <aside className="w-full lg:w-[17rem] xl:w-[18rem] max-h-[38vh] lg:max-h-none flex-shrink-0 bg-gradient-to-b from-white/92 via-[#f7faf9]/88 to-[#f1f6f7]/88 border border-[#dce5e8] rounded-2xl shadow-[0_20px_46px_-34px_rgba(8,31,62,0.42)] flex flex-col h-auto lg:h-full overflow-hidden">
       {/* Session header */}
-      <div className="px-4 py-4 border-b border-slate-100 bg-gradient-to-br from-white to-teal-50/60">
+      <div className="px-4 py-4 border-b border-slate-100 bg-gradient-to-br from-white via-[#edf8f4] to-[#e7f1f8]">
         <h1 className="font-display text-base font-semibold text-slate-900 truncate">
           {title || "New Proposal"}
         </h1>
