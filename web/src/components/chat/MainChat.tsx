@@ -2,6 +2,7 @@
 
 import { useProposalStore } from "@/lib/store";
 import { getNextActionText } from "@/lib/chat-actions";
+import { buildLocalAgentReply } from "@/lib/local-agent";
 import { INTERVIEW_SECTIONS } from "@/lib/types";
 import NextActionBanner from "./NextActionBanner";
 import MessageThread from "./MessageThread";
@@ -42,7 +43,11 @@ export default function MainChat({ onAction }: MainChatProps) {
       role: "user",
       content,
     });
-    // In a real app, this would send to the AI backend
+
+    const localReply = buildLocalAgentReply(content);
+    if (localReply) {
+      addMessage(localReply);
+    }
   };
 
   return (

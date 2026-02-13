@@ -123,7 +123,7 @@ function getLatestAgentUpdate(messages: ChatMessage[]): string {
 }
 
 export default function WorkflowTransparencyDeck({ onAction }: WorkflowTransparencyDeckProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const phase = useProposalStore((s) => s.session.currentPhase);
   const interview = useProposalStore((s) => s.interview);
   const sections = useProposalStore((s) => s.proposalSections);
@@ -277,7 +277,7 @@ export default function WorkflowTransparencyDeck({ onAction }: WorkflowTranspare
   const latestAgentUpdate = getLatestAgentUpdate(messages);
 
   return (
-    <section className="mx-4 mt-4 rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white via-[#f6fbff] to-[#effaf4] shadow-[0_18px_45px_-30px_rgba(3,60,73,0.45)]">
+    <section className="mx-4 mt-4 flex-shrink-0 rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white via-[#f6fbff] to-[#effaf4] shadow-[0_18px_45px_-30px_rgba(3,60,73,0.45)]">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-teal-100 px-4 py-4 sm:px-5">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700/80">Faculty Command Deck</p>
@@ -293,22 +293,32 @@ export default function WorkflowTransparencyDeck({ onAction }: WorkflowTranspare
         </button>
       </div>
 
-      <div className="space-y-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-        <div className="rounded-xl border border-slate-200 bg-white/90 p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
-              <Radar size={13} />
-              Phase {phase}: {PHASE_LABELS[phase]}
+      <div
+        className={`space-y-4 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4 ${
+          expanded ? "max-h-[36vh] overflow-y-auto" : ""
+        }`}
+      >
+        {expanded ? (
+          <div className="rounded-xl border border-slate-200 bg-white/90 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
+                <Radar size={13} />
+                Phase {phase}: {PHASE_LABELS[phase]}
+              </div>
+              <div className="text-xs text-slate-500">Overall completion: {phaseProgress}%</div>
             </div>
-            <div className="text-xs text-slate-500">Overall completion: {phaseProgress}%</div>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-teal-500 via-cyan-500 to-emerald-500 transition-all"
+                style={{ width: `${Math.max(phaseProgress, 6)}%` }}
+              />
+            </div>
           </div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-teal-500 via-cyan-500 to-emerald-500 transition-all"
-              style={{ width: `${Math.max(phaseProgress, 6)}%` }}
-            />
+        ) : (
+          <div className="rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-xs text-slate-600">
+            Phase {phase}: {PHASE_LABELS[phase]} • {phaseProgress}% complete
           </div>
-        </div>
+        )}
 
         {expanded && (
           <div className="grid gap-3 xl:grid-cols-3">

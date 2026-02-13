@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, Upload, Clock } from "lucide-react";
+import { Sparkles, Upload, Clock, Compass } from "lucide-react";
 
 interface WelcomeCardProps {
   onAction?: (action: string) => void;
@@ -21,6 +21,19 @@ export default function WelcomeCard({ onAction }: WelcomeCardProps) {
         </p>
 
         <div className="space-y-3">
+          <button
+            onClick={() => onAction?.("onboarding")}
+            className="w-full flex items-center gap-4 p-4 rounded-lg border-2 border-sky-200 bg-sky-50 hover:bg-sky-100 transition-colors text-left"
+          >
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center">
+              <Compass size={20} className="text-sky-700" />
+            </div>
+            <div>
+              <p className="font-medium text-sky-900">Show Quick Onboarding</p>
+              <p className="text-sm text-sky-700">Learn how to use commands and workflow controls</p>
+            </div>
+          </button>
+
           <button
             onClick={() => onAction?.("start-fresh")}
             className="w-full flex items-center gap-4 p-4 rounded-lg border-2 border-teal-200 bg-teal-50 hover:bg-teal-100 transition-colors text-left"
@@ -61,6 +74,16 @@ export default function WelcomeCard({ onAction }: WelcomeCardProps) {
               <p className="text-sm text-gray-600">Continue where you left off</p>
             </div>
           </button>
+        </div>
+
+        <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+          <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Useful Commands</p>
+          <p className="text-sm text-gray-700 leading-relaxed">
+            <code className="text-xs">/onboarding</code> <span className="mx-1">•</span>
+            <code className="text-xs">/isf-process</code> <span className="mx-1">•</span>
+            <code className="text-xs">/isf-docs</code> <span className="mx-1">•</span>
+            <code className="text-xs">/requirements</code>
+          </p>
         </div>
       </div>
     </div>

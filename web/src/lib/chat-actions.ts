@@ -10,13 +10,17 @@ export function getSuggestedActions(phase: Phase, context?: { draftReady?: boole
   switch (phase) {
     case 1:
       return [
+        { label: "Quick Onboarding", command: "/onboarding" },
         { label: "Upload Past Proposal", command: "/learn-from-grant" },
+        { label: "Explain ISF Process", command: "/isf-process" },
         { label: "Connect Google Drive", command: "/connect-drive" },
         { label: "View Requirements", command: "/requirements" },
       ];
     case 2:
       return [
         { label: "View Requirements", command: "/requirements" },
+        { label: "Explain ISF Process", command: "/isf-process" },
+        { label: "Open ISF Docs Index", command: "/isf-docs" },
         { label: "Upload Past Proposal", command: "/learn-from-grant" },
       ];
     case 3:

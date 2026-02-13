@@ -7,6 +7,7 @@ import LeftRail from "@/components/left-rail/LeftRail";
 import MainChat from "@/components/chat/MainChat";
 import ContextPanel from "@/components/context-panel/ContextPanel";
 import type { Phase } from "@/lib/types";
+import { buildLocalAgentReply } from "@/lib/local-agent";
 import { Eye } from "lucide-react";
 
 export default function ProposalWorkspace() {
@@ -54,12 +55,18 @@ export default function ProposalWorkspace() {
       ) {
         openContextPanel("operations");
       } else {
+        const content = action.startsWith("/") ? action : `/${action}`;
         addMessage({
           id: `action-${Date.now()}`,
           type: "text",
           role: "user",
-          content: action.startsWith("/") ? action : `/${action}`,
+          content,
         });
+
+        const localReply = buildLocalAgentReply(content);
+        if (localReply) {
+          addMessage(localReply);
+        }
       }
     },
     [addMessage, openContextPanel]

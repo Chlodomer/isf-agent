@@ -550,6 +550,9 @@ The user can use these commands at any time:
 | `/challenges` | List all challenges and responses |
 | `/devil` | Activate devil's advocate mode |
 | `/save` | Confirm progress is saved |
+| `/onboarding` | Explain how to use the app and workflow |
+| `/isf-docs` | Show location of local ISF docs snapshot |
+| `/isf-process` | Explain ISF submission process step-by-step |
 | `/help` | Show available commands |
 | `/restart` | Start over (with confirmation) |
 

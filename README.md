@@ -45,12 +45,15 @@ grant-agent/
 ├── state-template.yaml       # Session state structure
 ├── modules/
 │   ├── isf-requirements-2026.md    # Current ISF requirements (authoritative)
+│   ├── isf-website-docs.md          # Live ISF docs snapshot workflow
 │   ├── requirements-research.md    # How to load/fetch requirements
 │   ├── grant-learning.md           # Interactive learning from past proposals
 │   ├── past-proposals-analysis.md  # Batch analysis of past proposals
 │   ├── challenging-questions.md    # Socratic questioning protocol
 │   ├── interview.md                # Structured interview questions
 │   └── compliance.md               # Validation checklist
+├── scripts/
+│   └── fetch-isf-grants-docs.mjs   # Pull all grant-linked docs from isf.org.il
 ├── examples/                       # Synthetic examples for learning/demo
 │   ├── README.md                   # How to use examples
 │   ├── successful/                 # Funded proposal example
@@ -135,6 +138,9 @@ Use these during any phase:
 | `/challenge` | Request harder questions |
 | `/challenges` | List all challenges and responses |
 | `/compare` | Compare draft to successful examples |
+| `/onboarding` | Explain how to use the app and commands |
+| `/isf-docs` | Show local ISF documentation bundle location |
+| `/isf-process` | Explain the ISF submission process |
 | `/help` | List commands |
 
 ## What You'll Need
@@ -169,6 +175,22 @@ The agent produces:
 - Includes AI/LLM usage policy guidance
 
 ## Customization
+
+### Live ISF Website Documentation Snapshot
+
+To pull the latest grant-linked documentation directly from ISF:
+
+```bash
+node scripts/fetch-isf-grants-docs.mjs
+```
+
+This creates a local snapshot in `.context/isf-grants-docs/` with:
+- `manifest.json` (all indexed files + grant mappings)
+- Grant metadata and deadlines (`grant-types.*.json`, `deadlines.*.json`)
+- Downloaded PDFs under `files/`
+- Extracted text under `text/`
+
+Use this snapshot when answering detailed ISF process questions and refresh it when a new cycle opens.
 
 ### Updating ISF Requirements Annually
 
