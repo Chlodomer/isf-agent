@@ -165,7 +165,7 @@ const initialLearnings: Learnings = {
 
 const initialUI: UIState = {
   contextPanelOpen: false,
-  activeContextTab: "draft",
+  activeContextTab: "operations",
   leftRailCollapsed: false,
 };
 

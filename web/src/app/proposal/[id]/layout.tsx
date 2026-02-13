@@ -3,7 +3,5 @@ export default function ProposalLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="h-screen overflow-hidden">{children}</div>
-  );
+  return <div className="min-h-screen lg:h-screen overflow-y-auto lg:overflow-hidden">{children}</div>;
 }

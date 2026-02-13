@@ -45,8 +45,14 @@ export default function ProposalWorkspace() {
         openContextPanel("draft");
       } else if (action === "view-report" || action === "compliance" || action === "/compliance") {
         openContextPanel("compliance");
-      } else if (action === "view-status" || action === "status" || action === "/status") {
-        openContextPanel("interview");
+      } else if (
+        action === "view-status" ||
+        action === "status" ||
+        action === "/status" ||
+        action === "view-operations" ||
+        action === "operations"
+      ) {
+        openContextPanel("operations");
       } else {
         addMessage({
           id: `action-${Date.now()}`,
@@ -60,7 +66,7 @@ export default function ProposalWorkspace() {
   );
 
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex h-screen flex-col lg:flex-row gap-3 bg-transparent p-2 lg:p-3">
       <LeftRail onPhaseClick={handlePhaseClick} onAction={handleAction} />
       <MainChat onAction={handleAction} />
       {contextPanelOpen && <ContextPanel />}
@@ -69,7 +75,7 @@ export default function ProposalWorkspace() {
       {!demoLoaded && (
         <button
           onClick={loadDemo}
-          className="fixed bottom-4 right-4 flex items-center gap-2 px-4 py-2 rounded-full bg-gray-900 text-white text-sm shadow-lg hover:bg-gray-800 transition-colors z-50"
+          className="fixed bottom-4 right-4 flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 text-white text-sm shadow-lg hover:bg-slate-800 transition-colors z-50"
         >
           <Eye size={16} />
           Load Demo Flow
