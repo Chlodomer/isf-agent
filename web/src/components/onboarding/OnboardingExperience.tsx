@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 
@@ -122,7 +122,7 @@ export default function OnboardingExperience({ onComplete }: OnboardingExperienc
     [index]
   );
 
-  const moveNext = () => {
+  const moveNext = useCallback(() => {
     if (!gateSatisfied) return;
 
     if (isLast) {
@@ -134,12 +134,38 @@ export default function OnboardingExperience({ onComplete }: OnboardingExperienc
     }
 
     setIndex((current) => current + 1);
-  };
+  }, [affiliation, gateSatisfied, isLast, name, onComplete]);
 
-  const moveBack = () => {
+  const moveBack = useCallback(() => {
     if (isFirst) return;
     setIndex((current) => current - 1);
-  };
+  }, [isFirst]);
+
+  useEffect(() => {
+    const handleEnter = (event: KeyboardEvent) => {
+      if (
+        event.key !== "Enter" ||
+        event.shiftKey ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.repeat
+      ) {
+        return;
+      }
+
+      const target = event.target as HTMLElement | null;
+      if (target?.tagName === "TEXTAREA" || target?.isContentEditable) {
+        return;
+      }
+
+      event.preventDefault();
+      moveNext();
+    };
+
+    window.addEventListener("keydown", handleEnter);
+    return () => window.removeEventListener("keydown", handleEnter);
+  }, [moveNext]);
 
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(circle_at_14%_10%,rgba(188,159,118,0.20),transparent_42%),radial-gradient(circle_at_84%_12%,rgba(99,134,128,0.15),transparent_40%),linear-gradient(180deg,#f8f4ee_0%,#efe9df_100%)] px-4 py-6 sm:px-8 sm:py-8">
@@ -212,7 +238,12 @@ export default function OnboardingExperience({ onComplete }: OnboardingExperienc
               <input
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && gateSatisfied) moveNext(); }}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter" || !gateSatisfied) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  moveNext();
+                }}
                 placeholder="Your name"
                 className="mt-3 w-full rounded-lg border border-[#d9c8b0] bg-white px-4 py-3 text-base text-[#3f3223] outline-none transition-colors focus:border-[#be9f7f] focus:ring-2 focus:ring-[#d8bf9e]/40"
                 autoFocus
@@ -226,7 +257,12 @@ export default function OnboardingExperience({ onComplete }: OnboardingExperienc
               <input
                 value={affiliation}
                 onChange={(event) => setAffiliation(event.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && gateSatisfied) moveNext(); }}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter" || !gateSatisfied) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  moveNext();
+                }}
                 placeholder="Department / Affiliation"
                 className="mt-3 w-full rounded-lg border border-[#d9c8b0] bg-white px-4 py-3 text-base text-[#3f3223] outline-none transition-colors focus:border-[#be9f7f] focus:ring-2 focus:ring-[#d8bf9e]/40"
                 autoFocus

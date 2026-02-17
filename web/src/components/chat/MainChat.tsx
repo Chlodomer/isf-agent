@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { FileText } from "lucide-react";
 import { useProposalStore } from "@/lib/store";
 import { getNextActionText } from "@/lib/chat-actions";
 import { buildLocalAgentReply } from "@/lib/local-agent";
@@ -14,9 +15,15 @@ import WorkflowTransparencyDeck from "./WorkflowTransparencyDeck";
 
 interface MainChatProps {
   onAction: (action: string) => void;
+  activeThreadTitle?: string;
+  activeThreadRecap?: string | null;
 }
 
-export default function MainChat({ onAction }: MainChatProps) {
+export default function MainChat({
+  onAction,
+  activeThreadTitle = "Current thread",
+  activeThreadRecap = null,
+}: MainChatProps) {
   const messages = useProposalStore((s) => s.messages);
   const phase = useProposalStore((s) => s.session.currentPhase);
   const interview = useProposalStore((s) => s.interview);
@@ -142,6 +149,15 @@ export default function MainChat({ onAction }: MainChatProps) {
 
   return (
     <div className="flex-1 flex flex-col min-w-0 min-h-[45vh] lg:min-h-0 h-full rounded-2xl border border-[#dce6ea]/90 bg-gradient-to-b from-white/90 via-[#f8fbfc]/88 to-[#f4f8f9]/84 backdrop-blur-sm shadow-[0_24px_48px_-32px_rgba(20,40,66,0.38)]">
+      {activeThreadRecap && (
+        <div className="mx-4 mt-4 rounded-xl border border-[#cfe0e6] bg-[#f2f8fa] px-4 py-3">
+          <div className="flex items-center gap-2 text-[#224a57]">
+            <FileText size={16} />
+            <p className="text-sm font-semibold">{activeThreadTitle} recap</p>
+          </div>
+          <p className="mt-2 text-sm leading-relaxed text-[#3e5f69]">{activeThreadRecap}</p>
+        </div>
+      )}
       <WorkflowTransparencyDeck onAction={onAction} />
       <NextActionBanner text={nextActionText} />
       <MessageThread messages={messages} onAction={onAction} isLoading={isSending} />

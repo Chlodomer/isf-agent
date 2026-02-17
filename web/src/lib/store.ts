@@ -42,6 +42,7 @@ interface ProposalStore {
   setPhase: (phase: Phase) => void;
   setResearcherInfo: (info: Partial<ResearcherInfo>) => void;
   addMessage: (message: ChatMessage) => void;
+  setMessages: (messages: ChatMessage[]) => void;
   toggleContextPanel: () => void;
   setContextTab: (tab: ContextTab) => void;
   openContextPanel: (tab: ContextTab) => void;
@@ -208,6 +209,11 @@ export const useProposalStore = create<ProposalStore>((set) => ({
   addMessage: (message) =>
     set((state) => ({
       messages: [...state.messages, message],
+    })),
+
+  setMessages: (messages) =>
+    set(() => ({
+      messages,
     })),
 
   toggleContextPanel: () =>

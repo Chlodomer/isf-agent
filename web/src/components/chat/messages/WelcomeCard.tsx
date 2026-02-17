@@ -26,19 +26,6 @@ export default function WelcomeCard({ onAction }: WelcomeCardProps) {
 
         <div className="space-y-3">
           <button
-            onClick={() => onAction?.("onboarding")}
-            className="w-full flex items-center gap-4 p-4 rounded-lg border-2 border-sky-200 bg-sky-50 hover:bg-sky-100 transition-colors text-left"
-          >
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center">
-              <Compass size={20} className="text-sky-700" />
-            </div>
-            <div>
-              <p className="font-medium text-sky-900">Show Quick Onboarding</p>
-              <p className="text-sm text-sky-700">Learn how to use commands and workflow controls</p>
-            </div>
-          </button>
-
-          <button
             onClick={() => onAction?.("start-fresh")}
             className="w-full flex items-center gap-4 p-4 rounded-lg border-2 border-teal-200 bg-teal-50 hover:bg-teal-100 transition-colors text-left"
           >

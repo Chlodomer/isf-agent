@@ -88,19 +88,25 @@ function renderMessage(message: ChatMessage, onAction: (action: string) => void)
 
 export default function MessageThread({ messages, onAction, isLoading }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const hasSubstantiveHistory = messages.some(
+    (message) => message.type !== "welcome" && message.type !== "file_upload"
+  );
+  const visibleMessages = hasSubstantiveHistory
+    ? messages.filter((message) => message.type !== "welcome" && message.type !== "file_upload")
+    : messages;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, isLoading]);
+  }, [isLoading, visibleMessages.length]);
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-3 bg-gradient-to-b from-[#fbfdfd] via-[#f8fbfb] to-[#f5f9fa]">
-      {messages.length === 0 && (
+      {visibleMessages.length === 0 && (
         <div className="flex items-center justify-center h-full text-gray-500 text-base">
           Starting your grant writing session...
         </div>
       )}
-      {messages.map((msg) => renderMessage(msg, onAction))}
+      {visibleMessages.map((msg) => renderMessage(msg, onAction))}
       {isLoading && <TypingIndicator />}
       <div ref={bottomRef} />
     </div>
