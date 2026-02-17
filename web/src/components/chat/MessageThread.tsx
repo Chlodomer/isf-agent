@@ -16,6 +16,19 @@ import FileUploadCard from "./messages/FileUploadCard";
 interface MessageThreadProps {
   messages: ChatMessage[];
   onAction: (action: string) => void;
+  isLoading?: boolean;
+}
+
+function TypingIndicator() {
+  return (
+    <div className="flex justify-start my-3">
+      <div className="bg-gray-100 rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1">
+        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]" />
+        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
+        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+      </div>
+    </div>
+  );
 }
 
 function TextMessage({ message }: { message: Extract<ChatMessage, { type: "text" }> }) {
@@ -73,12 +86,12 @@ function renderMessage(message: ChatMessage, onAction: (action: string) => void)
   }
 }
 
-export default function MessageThread({ messages, onAction }: MessageThreadProps) {
+export default function MessageThread({ messages, onAction, isLoading }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+  }, [messages.length, isLoading]);
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-3 bg-gradient-to-b from-[#fbfdfd] via-[#f8fbfb] to-[#f5f9fa]">
@@ -88,6 +101,7 @@ export default function MessageThread({ messages, onAction }: MessageThreadProps
         </div>
       )}
       {messages.map((msg) => renderMessage(msg, onAction))}
+      {isLoading && <TypingIndicator />}
       <div ref={bottomRef} />
     </div>
   );

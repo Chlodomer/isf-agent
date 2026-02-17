@@ -25,7 +25,17 @@ export default function ProposalWorkspace() {
   const setResearcherInfo = useProposalStore((s) => s.setResearcherInfo);
   const messages = useProposalStore((s) => s.messages);
   const [demoLoaded, setDemoLoaded] = useState(false);
-  const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus | null>(null);
+  const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus>("checking");
+
+  // Resolve onboarding status from localStorage on mount
+  useEffect(() => {
+    try {
+      const completed = window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "true";
+      setOnboardingStatus(completed ? "done" : "active");
+    } catch {
+      setOnboardingStatus("active");
+    }
+  }, []);
 
   // Seed welcome message on first load
   useEffect(() => {
@@ -166,18 +176,7 @@ export default function ProposalWorkspace() {
     [addMessage, conversationContext, openContextPanel, messages, replayOnboarding]
   );
 
-  const resolvedOnboardingStatus: OnboardingStatus =
-    onboardingStatus ??
-    (() => {
-      if (typeof window === "undefined") return "checking";
-      try {
-        return window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "true" ? "done" : "active";
-      } catch {
-        return "active";
-      }
-    })();
-
-  if (resolvedOnboardingStatus === "checking") {
+  if (onboardingStatus === "checking") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#f8f4ee_0%,#efe9df_100%)]">
         <p className="text-sm font-medium text-[#6d5841]">Loading workspace...</p>
@@ -185,7 +184,7 @@ export default function ProposalWorkspace() {
     );
   }
 
-  if (resolvedOnboardingStatus === "active") {
+  if (onboardingStatus === "active") {
     return <OnboardingExperience onComplete={completeOnboarding} />;
   }
 
