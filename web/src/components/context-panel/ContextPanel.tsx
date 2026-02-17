@@ -8,8 +8,13 @@ import LearningsPanel from "./LearningsPanel";
 import ComplianceDashboardPanel from "./ComplianceDashboardPanel";
 import InterviewTrackerPanel from "./InterviewTrackerPanel";
 import OperationsDashboardPanel from "./OperationsDashboardPanel";
+import SubmissionReadinessPanel from "./SubmissionReadinessPanel";
 
-export default function ContextPanel() {
+interface ContextPanelProps {
+  onAction?: (action: string) => void;
+}
+
+export default function ContextPanel({ onAction }: ContextPanelProps) {
   const activeTab = useProposalStore((s) => s.ui.activeContextTab);
   const toggleContextPanel = useProposalStore((s) => s.toggleContextPanel);
 
@@ -28,9 +33,10 @@ export default function ContextPanel() {
 
       <div className="flex-1 overflow-hidden">
         {activeTab === "operations" && <OperationsDashboardPanel />}
+        {activeTab === "readiness" && <SubmissionReadinessPanel onAction={onAction} />}
         {activeTab === "draft" && <DraftViewerPanel />}
         {activeTab === "learnings" && <LearningsPanel />}
-        {activeTab === "compliance" && <ComplianceDashboardPanel />}
+        {activeTab === "compliance" && <ComplianceDashboardPanel onAction={onAction} />}
         {activeTab === "interview" && <InterviewTrackerPanel />}
       </div>
     </aside>

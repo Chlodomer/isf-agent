@@ -15,6 +15,7 @@ import type {
   Phase,
   ContextTab,
   SectionName,
+  ReferenceSource,
 } from "./types";
 
 interface ProposalStore {
@@ -25,6 +26,7 @@ interface ProposalStore {
   projectInfo: ProjectInfo;
   resources: Resources;
   trackRecord: TrackRecord;
+  referenceSources: ReferenceSource[];
   proposalSections: ProposalSections;
   interview: InterviewState;
   validation: ValidationState;
@@ -40,6 +42,7 @@ interface ProposalStore {
   setPhase: (phase: Phase) => void;
   setResearcherInfo: (info: Partial<ResearcherInfo>) => void;
   addMessage: (message: ChatMessage) => void;
+  setMessages: (messages: ChatMessage[]) => void;
   toggleContextPanel: () => void;
   setContextTab: (tab: ContextTab) => void;
   openContextPanel: (tab: ContextTab) => void;
@@ -52,6 +55,7 @@ interface ProposalStore {
   addLearningPattern: (pattern: Learnings["successfulPatterns"][0]) => void;
   addWeakness: (weakness: Learnings["weaknesses"][0]) => void;
   addReviewerConcern: (concern: Learnings["reviewerConcerns"][0]) => void;
+  addReferenceSources: (sources: ReferenceSource[]) => void;
 }
 
 const initialSession: Session = {
@@ -177,6 +181,7 @@ export const useProposalStore = create<ProposalStore>((set) => ({
   projectInfo: initialProjectInfo,
   resources: initialResources,
   trackRecord: initialTrackRecord,
+  referenceSources: [],
   proposalSections: initialProposalSections,
   interview: initialInterview,
   validation: initialValidation,
@@ -204,6 +209,11 @@ export const useProposalStore = create<ProposalStore>((set) => ({
   addMessage: (message) =>
     set((state) => ({
       messages: [...state.messages, message],
+    })),
+
+  setMessages: (messages) =>
+    set(() => ({
+      messages,
     })),
 
   toggleContextPanel: () =>
@@ -292,4 +302,16 @@ export const useProposalStore = create<ProposalStore>((set) => ({
         reviewerConcerns: [...state.learnings.reviewerConcerns, concern],
       },
     })),
+
+  addReferenceSources: (sources) =>
+    set((state) => {
+      const existingIds = new Set(state.referenceSources.map((source) => source.id));
+      const uniqueSources = sources.filter((source) => !existingIds.has(source.id));
+      if (uniqueSources.length === 0) {
+        return {};
+      }
+      return {
+        referenceSources: [...state.referenceSources, ...uniqueSources],
+      };
+    }),
 }));

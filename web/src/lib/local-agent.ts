@@ -51,9 +51,10 @@ export function getLocalAgentReply(rawInput: string, context?: LocalAgentContext
     return [
       `${namePrefix}quick onboarding:`,
       "1. Share your project summary and target grant track.",
-      "2. Upload past proposals or reviewer feedback for better guidance.",
-      "3. Use: /requirements, /learn-from-grant, /challenge, /preview, /status.",
-      "4. For ISF docs, use /isf-docs. For process walkthrough, use /isf-process.",
+      "2. You can type in plain language. No special command syntax is required.",
+      "3. Upload papers/proposals/reviews with the paperclip so drafts stay evidence-based.",
+      "4. Use Compliance and Readiness views to catch blockers before submission.",
+      "5. If needed, optional shortcuts are available (for example /validate, /readiness).",
       ...(affiliationNote ? [affiliationNote] : []),
     ].join("\n");
   }
@@ -81,7 +82,7 @@ export function getLocalAgentReply(rawInput: string, context?: LocalAgentContext
 
   if (isHelpRequest(normalized)) {
     return [
-      "Quick commands: /onboarding, /requirements, /learn-from-grant, /challenge, /preview, /status, /isf-docs, /isf-process",
+      "Quick commands: /onboarding, /sources, /validate, /readiness, /checklist, /preview, /status, /requirements, /isf-docs, /isf-process",
     ].join("\n");
   }
 

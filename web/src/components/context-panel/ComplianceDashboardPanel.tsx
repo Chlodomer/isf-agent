@@ -3,7 +3,11 @@
 import { X, AlertTriangle, RefreshCw } from "lucide-react";
 import { useProposalStore } from "@/lib/store";
 
-export default function ComplianceDashboardPanel() {
+interface ComplianceDashboardPanelProps {
+  onAction?: (action: string) => void;
+}
+
+export default function ComplianceDashboardPanel({ onAction }: ComplianceDashboardPanelProps) {
   const validation = useProposalStore((s) => s.validation);
 
   if (!validation.lastRun) {
@@ -13,7 +17,10 @@ export default function ComplianceDashboardPanel() {
           Compliance check will run after all sections are drafted. You can also
           run a partial check anytime to catch issues early.
         </p>
-        <button className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors">
+        <button
+          onClick={() => onAction?.("/validate")}
+          className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors"
+        >
           <RefreshCw size={14} />
           Run Partial Check
         </button>
@@ -48,8 +55,11 @@ export default function ComplianceDashboardPanel() {
         <h3 className="text-xs font-semibold text-gray-700 uppercase">
           Compliance Dashboard
         </h3>
-        <button className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors">
-          <RefreshCw size={12} />
+        <button
+          onClick={() => onAction?.("/validate")}
+          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          <RefreshCw size={14} />
           Re-run
         </button>
       </div>
@@ -101,7 +111,10 @@ export default function ComplianceDashboardPanel() {
                       <span className="font-mono text-xs text-red-600">{issue.id}</span>
                       <p className="text-xs text-gray-600">{issue.description}</p>
                     </div>
-                    <button className="text-xs text-blue-600 hover:underline flex-shrink-0">
+                    <button
+                      onClick={() => onAction?.(`fix:${issue.id}`)}
+                      className="text-xs text-blue-600 hover:underline flex-shrink-0"
+                    >
                       Fix
                     </button>
                   </div>
@@ -124,7 +137,10 @@ export default function ComplianceDashboardPanel() {
 
       {validation.failed.length > 0 && (
         <div className="px-4 py-3 border-t border-gray-100">
-          <button className="w-full text-sm py-2 rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors">
+          <button
+            onClick={() => onAction?.("fix-issues")}
+            className="w-full text-sm py-2 rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
+          >
             Fix All Issues
           </button>
         </div>

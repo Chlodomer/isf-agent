@@ -62,7 +62,7 @@ export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputP
     >
       {isDragOver && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-teal-50/90 border-2 border-dashed border-teal-300 rounded-lg m-1">
-          <p className="text-sm font-medium text-teal-700">
+          <p className="text-base font-medium text-teal-700">
             Drop your proposal, CV, or review file here
           </p>
         </div>
@@ -71,10 +71,10 @@ export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputP
       <div className="flex items-end gap-2 p-3">
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex-shrink-0 p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-lg hover:bg-[#edf3f6]"
+          className="flex-shrink-0 p-2.5 text-slate-400 hover:text-slate-600 transition-colors rounded-lg hover:bg-[#edf3f6]"
           aria-label="Attach file"
         >
-          <Paperclip size={18} />
+          <Paperclip size={20} />
         </button>
         <input
           ref={fileInputRef}
@@ -91,20 +91,24 @@ export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputP
           value={value}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
-          placeholder="Type your message..."
+          placeholder="Ask in plain language (for example: Help me improve this section)..."
           disabled={disabled}
           rows={1}
-          className="flex-1 resize-none border border-[#d8e2e6] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 disabled:opacity-50 bg-[#f8fbfc]"
+          className="flex-1 resize-none border border-[#d8e2e6] rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 disabled:opacity-50 bg-[#f8fbfc]"
         />
 
         <button
           onClick={handleSubmit}
           disabled={!value.trim() || disabled}
-          className="flex-shrink-0 p-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          className="flex-shrink-0 p-2.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="Send message"
         >
-          <ArrowUp size={18} />
+          <ArrowUp size={20} />
         </button>
+      </div>
+
+      <div className="px-4 pb-3 text-sm text-slate-500">
+        No special commands required. Just describe what you need.
       </div>
     </div>
   );

@@ -10,6 +10,11 @@ interface ChatRequestBody {
   context?: {
     name?: string;
     affiliation?: string;
+    sources?: Array<{
+      id?: string;
+      label?: string;
+      filename?: string;
+    }>;
   };
 }
 
@@ -28,7 +33,18 @@ interface AnthropicMessageResponse {
 const SYSTEM_PROMPT = [
   "You are an expert assistant for ISF grant preparation.",
   "Respond in plain text only. Do not use Markdown symbols such as *, _, #, or backticks.",
+  "Use a businesslike, neutral tone.",
+  "Do not use praise, flattery, motivational language, or conversational fillers.",
+  "Do not compliment the user's topic, approach, or background.",
+  "Prioritize precision over speed.",
+  "Do not draft full proposal sections (for example abstract/aims/methods) until critical details are collected and the user explicitly asks for a draft.",
+  "If details are missing, ask focused follow-up questions and wait for answers before drafting.",
+  "At the start of information gathering, briefly state that you will ask a few short questions to understand the idea.",
+  "Ask exactly one question per message while gathering inputs. Do not bundle multiple questions in one reply.",
+  "Proactively invite the user to upload key literature, prior proposals, or reviewer comments when those could improve accuracy.",
+  "When literature is discussed or uploaded, ask for the user's stance in practical terms: what they agree with, what they disagree with, and why.",
   "Keep replies short and practical: 2-5 sentences by default.",
+  "When source ids are available in context, cite them inline as [S1], [S2], etc.",
   "If the user needs options, provide at most 3 focused choices and recommend one.",
   "Ask at most one follow-up question when needed.",
 ].join(" ");
@@ -43,12 +59,36 @@ function buildContextPrompt(context?: ChatRequestBody["context"]): string {
   const notes: string[] = [];
   if (name) {
     notes.push(
-      `The researcher's name is ${name}. Address them by name naturally in selected replies.`
+      `The researcher's name is ${name}. Address by name when helpful, while keeping a direct business tone.`
     );
   }
   if (affiliation) {
     notes.push(
       `Their departmental affiliation is ${affiliation}. Use this context when examples or framing are relevant.`
+    );
+  }
+
+  const sourceLines = Array.isArray(context.sources)
+    ? context.sources
+        .map((source) => {
+          const id = typeof source.id === "string" ? source.id.trim() : "";
+          const label = typeof source.label === "string" ? source.label.trim() : "";
+          const filename = typeof source.filename === "string" ? source.filename.trim() : "";
+          if (!id || !label) return null;
+          return `${id}: ${label}${filename ? ` (${filename})` : ""}`;
+        })
+        .filter((line): line is string => Boolean(line))
+        .slice(0, 15)
+    : [];
+
+  if (sourceLines.length > 0) {
+    notes.push(
+      [
+        "The user provided these sources for grounding:",
+        ...sourceLines,
+        "When a claim uses one of these sources, append its id in brackets like [S1].",
+        "If no provided source supports a claim, state that clearly instead of inventing a citation.",
+      ].join(" ")
     );
   }
 
