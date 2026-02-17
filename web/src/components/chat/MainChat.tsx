@@ -93,7 +93,7 @@ export default function MainChat({ onAction }: MainChatProps) {
     <div className="flex-1 flex flex-col min-w-0 min-h-[45vh] lg:min-h-0 h-full rounded-2xl border border-[#dce6ea]/90 bg-gradient-to-b from-white/90 via-[#f8fbfc]/88 to-[#f4f8f9]/84 backdrop-blur-sm shadow-[0_24px_48px_-32px_rgba(20,40,66,0.38)]">
       <WorkflowTransparencyDeck onAction={onAction} />
       <NextActionBanner text={nextActionText} />
-      <MessageThread messages={messages} onAction={onAction} />
+      <MessageThread messages={messages} onAction={onAction} isLoading={isSending} />
       <SuggestedActionsBar onAction={onAction} />
       <ChatInput onSend={handleSend} disabled={isSending} />
     </div>

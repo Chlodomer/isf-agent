@@ -5,7 +5,7 @@ import type { ChatMessage, Phase } from "./types";
  * In production, these would come from the AI backend.
  */
 export const DEMO_MESSAGES: ChatMessage[] = [
-  { id: "welcome-1", type: "welcome", role: "agent" },
+  { id: "demo-welcome-1", type: "welcome", role: "agent" },
   {
     id: "demo-text-1",
     type: "text",

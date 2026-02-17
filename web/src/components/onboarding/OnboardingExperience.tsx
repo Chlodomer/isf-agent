@@ -163,6 +163,7 @@ export default function OnboardingExperience({ onComplete }: OnboardingExperienc
               <input
                 value={name}
                 onChange={(event) => setName(event.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && gateSatisfied) moveNext(); }}
                 placeholder="Your name"
                 className="mt-3 w-full rounded-lg border border-[#d9c8b0] bg-white px-3 py-2 text-sm text-[#3f3223] outline-none transition-colors focus:border-[#be9f7f] focus:ring-2 focus:ring-[#d8bf9e]/40"
                 autoFocus
@@ -176,6 +177,7 @@ export default function OnboardingExperience({ onComplete }: OnboardingExperienc
               <input
                 value={affiliation}
                 onChange={(event) => setAffiliation(event.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && gateSatisfied) moveNext(); }}
                 placeholder="Department / Affiliation"
                 className="mt-3 w-full rounded-lg border border-[#d9c8b0] bg-white px-3 py-2 text-sm text-[#3f3223] outline-none transition-colors focus:border-[#be9f7f] focus:ring-2 focus:ring-[#d8bf9e]/40"
                 autoFocus
