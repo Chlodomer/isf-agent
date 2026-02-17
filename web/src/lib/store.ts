@@ -15,6 +15,7 @@ import type {
   Phase,
   ContextTab,
   SectionName,
+  ReferenceSource,
 } from "./types";
 
 interface ProposalStore {
@@ -25,6 +26,7 @@ interface ProposalStore {
   projectInfo: ProjectInfo;
   resources: Resources;
   trackRecord: TrackRecord;
+  referenceSources: ReferenceSource[];
   proposalSections: ProposalSections;
   interview: InterviewState;
   validation: ValidationState;
@@ -52,6 +54,7 @@ interface ProposalStore {
   addLearningPattern: (pattern: Learnings["successfulPatterns"][0]) => void;
   addWeakness: (weakness: Learnings["weaknesses"][0]) => void;
   addReviewerConcern: (concern: Learnings["reviewerConcerns"][0]) => void;
+  addReferenceSources: (sources: ReferenceSource[]) => void;
 }
 
 const initialSession: Session = {
@@ -177,6 +180,7 @@ export const useProposalStore = create<ProposalStore>((set) => ({
   projectInfo: initialProjectInfo,
   resources: initialResources,
   trackRecord: initialTrackRecord,
+  referenceSources: [],
   proposalSections: initialProposalSections,
   interview: initialInterview,
   validation: initialValidation,
@@ -292,4 +296,16 @@ export const useProposalStore = create<ProposalStore>((set) => ({
         reviewerConcerns: [...state.learnings.reviewerConcerns, concern],
       },
     })),
+
+  addReferenceSources: (sources) =>
+    set((state) => {
+      const existingIds = new Set(state.referenceSources.map((source) => source.id));
+      const uniqueSources = sources.filter((source) => !existingIds.has(source.id));
+      if (uniqueSources.length === 0) {
+        return {};
+      }
+      return {
+        referenceSources: [...state.referenceSources, ...uniqueSources],
+      };
+    }),
 }));

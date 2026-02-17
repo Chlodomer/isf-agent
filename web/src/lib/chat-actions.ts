@@ -26,6 +26,7 @@ export function getSuggestedActions(phase: Phase, context?: { draftReady?: boole
     case 3:
       return [
         { label: "Upload Past Proposal", command: "/learn-from-grant" },
+        { label: "List Sources", command: "/sources" },
         { label: "Add Reviewer Feedback", command: "/learn-from-reviews" },
         { label: "Show Learnings", command: "/show-learnings" },
       ];
@@ -34,6 +35,7 @@ export function getSuggestedActions(phase: Phase, context?: { draftReady?: boole
         { label: "Skip Question", command: "/skip" },
         { label: "Go Back", command: "/back" },
         { label: "Challenge Me", command: "/challenge" },
+        { label: "List Sources", command: "/sources" },
         { label: "Preview Draft", command: "/preview" },
         { label: "Show Learnings", command: "/show-learnings" },
       ];
@@ -47,6 +49,7 @@ export function getSuggestedActions(phase: Phase, context?: { draftReady?: boole
           : []),
         { label: "Compare to Past", command: "/compare" },
         { label: "Check Red Flags", command: "/redflags" },
+        { label: "Readiness", command: "/readiness" },
         { label: "Devil's Advocate", command: "/devil" },
         { label: "Preview Full", command: "/preview" },
       ];
@@ -54,12 +57,14 @@ export function getSuggestedActions(phase: Phase, context?: { draftReady?: boole
       return [
         { label: "Fix Issues", command: "/fix" },
         { label: "View Full Report", command: "/compliance" },
+        { label: "Readiness", command: "/readiness" },
         { label: "Re-run Check", command: "/validate" },
       ];
     case 7:
       return [
         { label: "Preview Final", command: "/preview" },
         { label: "Export PDF", command: "/export" },
+        { label: "Readiness", command: "/readiness" },
         { label: "Submission Checklist", command: "/checklist" },
       ];
     default:

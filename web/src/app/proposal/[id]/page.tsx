@@ -11,6 +11,8 @@ import type { OnboardingProfile } from "@/components/onboarding/OnboardingExperi
 import type { Phase } from "@/lib/types";
 import { buildLocalAgentReply } from "@/lib/local-agent";
 import { fetchAssistantReply } from "@/lib/chat-backend";
+import { runComplianceValidation } from "@/lib/compliance";
+import { buildReadinessSnapshot } from "@/lib/readiness";
 import { Eye } from "lucide-react";
 
 const ONBOARDING_STORAGE_KEY = "isf.onboarding.completed";
@@ -23,18 +25,28 @@ export default function ProposalWorkspace() {
   const openContextPanel = useProposalStore((s) => s.openContextPanel);
   const researcherInfo = useProposalStore((s) => s.researcherInfo);
   const setResearcherInfo = useProposalStore((s) => s.setResearcherInfo);
+  const requirements = useProposalStore((s) => s.requirements);
+  const proposalSections = useProposalStore((s) => s.proposalSections);
+  const projectInfo = useProposalStore((s) => s.projectInfo);
+  const resources = useProposalStore((s) => s.resources);
+  const validation = useProposalStore((s) => s.validation);
+  const setValidation = useProposalStore((s) => s.setValidation);
+  const referenceSources = useProposalStore((s) => s.referenceSources);
   const messages = useProposalStore((s) => s.messages);
   const [demoLoaded, setDemoLoaded] = useState(false);
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus>("checking");
 
   // Resolve onboarding status from localStorage on mount
   useEffect(() => {
-    try {
-      const completed = window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "true";
-      setOnboardingStatus(completed ? "done" : "active");
-    } catch {
-      setOnboardingStatus("active");
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        const completed = window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "true";
+        setOnboardingStatus(completed ? "done" : "active");
+      } catch {
+        setOnboardingStatus("active");
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // Seed welcome message on first load
@@ -106,8 +118,13 @@ export default function ProposalWorkspace() {
     () => ({
       name: researcherInfo.name,
       affiliation: researcherInfo.department,
+      sources: referenceSources.map((source) => ({
+        id: source.id,
+        label: source.label,
+        filename: source.filename,
+      })),
     }),
-    [researcherInfo.department, researcherInfo.name]
+    [referenceSources, researcherInfo.department, researcherInfo.name]
   );
 
   const handleAction = useCallback(
@@ -122,7 +139,12 @@ export default function ProposalWorkspace() {
         openContextPanel("learnings");
       } else if (action === "open-draft" || action === "preview" || action === "/preview") {
         openContextPanel("draft");
-      } else if (action === "view-report" || action === "compliance" || action === "/compliance") {
+      } else if (
+        action === "view-report" ||
+        action === "compliance" ||
+        action === "/compliance" ||
+        action === "open-compliance"
+      ) {
         openContextPanel("compliance");
       } else if (
         action === "view-status" ||
@@ -132,6 +154,97 @@ export default function ProposalWorkspace() {
         action === "operations"
       ) {
         openContextPanel("operations");
+      } else if (action === "open-readiness" || action === "/readiness" || action === "/checklist") {
+        if (action.startsWith("/")) {
+          addMessage({
+            id: `action-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+            type: "text",
+            role: "user",
+            content: action,
+          });
+        }
+        openContextPanel("readiness");
+        const snapshot = buildReadinessSnapshot({
+          researcherInfo,
+          proposalSections,
+          validation,
+          referenceSources,
+        });
+        addMessage({
+          id: `readiness-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          type: "text",
+          role: "agent",
+          content: [
+            `Readiness score: ${snapshot.score}%`,
+            `Blockers: ${snapshot.blockers}, In progress: ${snapshot.inProgress}.`,
+            snapshot.ready
+              ? "You are clear to assemble the final package."
+              : "Run /validate and clear blockers before final assembly.",
+          ].join(" "),
+        });
+      } else if (action === "/sources") {
+        addMessage({
+          id: `action-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          type: "text",
+          role: "user",
+          content: action,
+        });
+        const summary =
+          referenceSources.length === 0
+            ? "No source files are attached yet."
+            : referenceSources.map((source) => `${source.id}: ${source.filename}`).join("\n");
+        addMessage({
+          id: `sources-${Date.now()}`,
+          type: "text",
+          role: "agent",
+          content:
+            referenceSources.length === 0
+              ? `${summary} Upload files with the paperclip to enable source-grounded citations.`
+              : `Current source library:\n${summary}`,
+        });
+      } else if (
+        action === "/validate" ||
+        action === "/fix" ||
+        action === "fix-issues" ||
+        action.startsWith("fix:")
+      ) {
+        if (action.startsWith("/")) {
+          addMessage({
+            id: `action-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+            type: "text",
+            role: "user",
+            content: action,
+          });
+        }
+        const report = runComplianceValidation({
+          requirements,
+          proposalSections,
+          resources,
+          projectInfo,
+          referenceSources,
+        });
+        setValidation(report);
+        addMessage({
+          id: `compliance-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          type: "compliance_report",
+          role: "agent",
+          passed: report.passed.length,
+          failed: report.failed,
+          warnings: report.warnings,
+        });
+        if (report.failed.length > 0) {
+          const topIssues = report.failed
+            .slice(0, 3)
+            .map((issue) => `${issue.id}: ${issue.fix ?? issue.description}`)
+            .join("\n");
+          addMessage({
+            id: `compliance-fix-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+            type: "text",
+            role: "agent",
+            content: `Top blockers to fix next:\n${topIssues}`,
+          });
+        }
+        openContextPanel("compliance");
       } else {
         const content = action.startsWith("/") ? action : `/${action}`;
         addMessage({
@@ -173,7 +286,21 @@ export default function ProposalWorkspace() {
         })();
       }
     },
-    [addMessage, conversationContext, openContextPanel, messages, replayOnboarding]
+    [
+      addMessage,
+      conversationContext,
+      messages,
+      openContextPanel,
+      projectInfo,
+      proposalSections,
+      referenceSources,
+      replayOnboarding,
+      requirements,
+      researcherInfo,
+      resources,
+      setValidation,
+      validation,
+    ]
   );
 
   if (onboardingStatus === "checking") {
@@ -194,7 +321,7 @@ export default function ProposalWorkspace() {
       <div className="relative z-10 contents">
         <LeftRail onPhaseClick={handlePhaseClick} onAction={handleAction} />
         <MainChat onAction={handleAction} />
-        {contextPanelOpen && <ContextPanel />}
+        {contextPanelOpen && <ContextPanel onAction={handleAction} />}
       </div>
 
       {/* Demo mode toggle */}

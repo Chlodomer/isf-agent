@@ -186,6 +186,17 @@ export interface TrackRecord {
   collaborators: Collaborator[];
 }
 
+// --- Source Grounding ---
+
+export interface ReferenceSource {
+  id: string;
+  label: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  addedAt: string;
+}
+
 // --- Proposal Sections ---
 
 export interface SectionDraft {
@@ -387,7 +398,13 @@ export type ChatMessage =
 
 // --- UI State ---
 
-export type ContextTab = "operations" | "draft" | "learnings" | "compliance" | "interview";
+export type ContextTab =
+  | "operations"
+  | "draft"
+  | "learnings"
+  | "compliance"
+  | "interview"
+  | "readiness";
 
 export interface UIState {
   contextPanelOpen: boolean;

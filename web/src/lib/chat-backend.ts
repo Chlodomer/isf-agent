@@ -8,6 +8,11 @@ interface ConversationMessage {
 export interface ConversationContext {
   name?: string | null;
   affiliation?: string | null;
+  sources?: Array<{
+    id: string;
+    label: string;
+    filename: string;
+  }>;
 }
 
 interface ChatApiSuccess {
@@ -45,10 +50,19 @@ export async function fetchAssistantReply(
   context?: ConversationContext
 ): Promise<string> {
   const cleanContext =
-    context && (context.name?.trim() || context.affiliation?.trim())
+    context &&
+    (context.name?.trim() || context.affiliation?.trim() || (context.sources?.length ?? 0) > 0)
       ? {
           name: context.name?.trim() || undefined,
           affiliation: context.affiliation?.trim() || undefined,
+          sources:
+            context.sources && context.sources.length > 0
+              ? context.sources.map((source) => ({
+                  id: source.id,
+                  label: source.label,
+                  filename: source.filename,
+                }))
+              : undefined,
         }
       : undefined;
 

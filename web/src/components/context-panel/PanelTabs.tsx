@@ -5,6 +5,7 @@ import type { ContextTab } from "@/lib/types";
 
 const TABS: { id: ContextTab; label: string }[] = [
   { id: "operations", label: "Operations" },
+  { id: "readiness", label: "Readiness" },
   { id: "draft", label: "Draft" },
   { id: "learnings", label: "Learnings" },
   { id: "compliance", label: "Compliance" },
@@ -21,7 +22,7 @@ export default function PanelTabs() {
         <button
           key={tab.id}
           onClick={() => setContextTab(tab.id)}
-          className={`flex-shrink-0 px-3 py-2.5 text-xs font-medium transition-colors ${
+          className={`flex-shrink-0 px-3 py-2.5 text-sm font-medium transition-colors ${
             activeTab === tab.id
               ? "text-teal-700 border-b-2 border-teal-600"
               : "text-slate-500 hover:text-slate-700"
