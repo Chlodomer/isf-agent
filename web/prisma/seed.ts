@@ -11,6 +11,9 @@ async function main() {
   if (!email || !password) {
     throw new Error("ADMIN_SEED_EMAIL and ADMIN_SEED_PASSWORD are required for db:seed.");
   }
+  if (password === "change_me" || password.length < 10) {
+    throw new Error("Set ADMIN_SEED_PASSWORD to a non-default value with at least 10 characters.");
+  }
 
   const passwordHash = await hash(password, 12);
 

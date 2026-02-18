@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { signInWithCredentials, signInWithLocalAdmin } from "./actions";
 
 interface SignInPageProps {
@@ -12,15 +10,11 @@ function normalizeParam(value: string | string[] | undefined): string | null {
 }
 
 export default async function SignInPage({ searchParams }: SignInPageProps) {
-  const session = await auth();
-  if (session?.user) {
-    redirect("/proposal/new");
-  }
-
   const params = (await searchParams) ?? {};
   const error = normalizeParam(params.error);
   const callbackUrl = normalizeParam(params.callbackUrl) ?? "/proposal/new";
-  const showLocalAdminShortcut = process.env.NODE_ENV === "development";
+  const showLocalAdminShortcut =
+    process.env.NODE_ENV === "development" && process.env.ENABLE_LOCAL_ADMIN_SHORTCUT === "true";
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_8%_8%,rgba(73,125,112,0.16),transparent_38%),radial-gradient(circle_at_88%_10%,rgba(193,159,102,0.2),transparent_42%),linear-gradient(180deg,#f6f3eb_0%,#ece6da_100%)] px-4 py-10">

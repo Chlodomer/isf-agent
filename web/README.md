@@ -47,6 +47,7 @@ AUTH_SECRET=...
 AUTH_URL=http://localhost:3000
 ADMIN_SEED_EMAIL=admin@example.com
 ADMIN_SEED_PASSWORD=...
+ENABLE_LOCAL_ADMIN_SHORTCUT=false
 ```
 
 3. Generate Prisma client and run migrations:
@@ -62,7 +63,14 @@ npm run prisma:migrate
 npm run db:seed
 ```
 
+`db:seed` upserts the admin user from `ADMIN_SEED_*`. If you change the admin password in env, run `npm run db:seed` again.
+
 5. Start the app and sign in at `/sign-in`.
+
+Optional local convenience:
+
+- Set `ENABLE_LOCAL_ADMIN_SHORTCUT=true` only in local development to show a one-click "Continue as local admin" button.
+- Keep `ENABLE_LOCAL_ADMIN_SHORTCUT=false` for production deployments.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
