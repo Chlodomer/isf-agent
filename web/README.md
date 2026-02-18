@@ -29,6 +29,41 @@ export ANTHROPIC_MODEL="claude-sonnet-4-20250514"
 
 Without `ANTHROPIC_API_KEY`, the app will still load but conversation requests will return a configuration error.
 
+## Authentication + Database Setup
+
+The app now uses Auth.js + Prisma for multi-user login and role-based access (`RESEARCHER` / `ADMIN`).
+
+1. Copy environment variables:
+
+```bash
+cp .env.example .env.local
+```
+
+2. Set at minimum:
+
+```bash
+DATABASE_URL=postgresql://...
+AUTH_SECRET=...
+AUTH_URL=http://localhost:3000
+ADMIN_SEED_EMAIL=admin@example.com
+ADMIN_SEED_PASSWORD=...
+```
+
+3. Generate Prisma client and run migrations:
+
+```bash
+npm run prisma:generate
+npm run prisma:migrate
+```
+
+4. Seed the first admin user:
+
+```bash
+npm run db:seed
+```
+
+5. Start the app and sign in at `/sign-in`.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
