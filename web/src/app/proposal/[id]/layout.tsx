@@ -1,15 +1,49 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
+import { prisma } from "@/lib/prisma";
+
+const LOCAL_THREAD_ID_PREFIX = "thread-";
+
+export const dynamic = "force-dynamic";
+
+function isLocalThreadId(threadId: string) {
+  return threadId.startsWith(LOCAL_THREAD_ID_PREFIX);
+}
 
 export default async function ProposalLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ id: string }> | { id: string };
 }) {
   const session = await auth();
   if (!session?.user) {
     redirect("/sign-in");
+  }
+
+  const userId = session.user.id;
+  if (!userId) {
+    redirect("/sign-in");
+  }
+
+  const { id } = await params;
+  const isWorkspaceRoot = id === "new";
+  if (!isWorkspaceRoot && !isLocalThreadId(id)) {
+    const allowedThread = await prisma.thread.findFirst({
+      where: {
+        id,
+        project: {
+          ownerUserId: userId,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!allowedThread) {
+      redirect("/proposal/new");
+    }
   }
 
   const isAdmin = session.user.role === "ADMIN";
