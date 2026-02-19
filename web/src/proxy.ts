@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { auth } from "@/auth";
 
 const PROTECTED_PREFIXES = ["/proposal", "/admin"];
 
-export async function proxy(request: NextRequest) {
+export default auth((request) => {
   const { pathname, search } = request.nextUrl;
-  const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
-  const isAuthenticated = Boolean(token);
+  const sessionUser = request.auth?.user;
+  const isAuthenticated = Boolean(sessionUser);
   const isAuthPage = pathname === "/sign-in";
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
   const isAdminPage = pathname.startsWith("/admin");
@@ -23,14 +22,14 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isAdminPage) {
-    const role = typeof token?.role === "string" ? token.role : "RESEARCHER";
+    const role = sessionUser?.role ?? "RESEARCHER";
     if (role !== "ADMIN") {
       return NextResponse.redirect(new URL("/proposal/new", request.url));
     }
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
