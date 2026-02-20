@@ -91,16 +91,22 @@ export default function MessageThread({ messages, onAction, isLoading }: Message
   const hasSubstantiveHistory = messages.some(
     (message) => message.type !== "welcome" && message.type !== "file_upload"
   );
+  const shouldUseScrollableThread = hasSubstantiveHistory || Boolean(isLoading);
   const visibleMessages = hasSubstantiveHistory
     ? messages.filter((message) => message.type !== "welcome" && message.type !== "file_upload")
     : messages;
 
   useEffect(() => {
+    if (!shouldUseScrollableThread) return;
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [isLoading, visibleMessages.length]);
+  }, [isLoading, shouldUseScrollableThread, visibleMessages.length]);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gradient-to-b from-[#fdf9f3] via-[#faf4ec] to-[#f4ecdf] px-4 py-3">
+    <div
+      className={`flex-1 bg-gradient-to-b from-[#fdf9f3] via-[#faf4ec] to-[#f4ecdf] px-4 py-3 ${
+        shouldUseScrollableThread ? "overflow-y-auto" : "overflow-y-auto lg:overflow-y-hidden"
+      }`}
+    >
       {visibleMessages.length === 0 && (
         <div className="flex h-full items-center justify-center text-base text-[#766554]">
           Starting your grant writing session...
