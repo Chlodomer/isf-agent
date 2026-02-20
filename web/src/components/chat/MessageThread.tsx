@@ -103,8 +103,10 @@ export default function MessageThread({ messages, onAction, isLoading }: Message
 
   return (
     <div
-      className={`flex-1 bg-gradient-to-b from-[#fdf9f3] via-[#faf4ec] to-[#f4ecdf] px-4 py-3 ${
-        shouldUseScrollableThread ? "overflow-y-auto" : "overflow-y-auto lg:overflow-y-hidden"
+      className={`flex-1 bg-gradient-to-b from-[#fdf9f3] via-[#faf4ec] to-[#f4ecdf] px-4 pt-3 ${
+        shouldUseScrollableThread
+          ? "overflow-y-auto pb-3"
+          : "overflow-y-auto pb-5 hide-scrollbar"
       }`}
     >
       {visibleMessages.length === 0 && (
