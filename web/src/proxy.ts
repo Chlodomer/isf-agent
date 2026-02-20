@@ -7,7 +7,7 @@ export default auth((request) => {
   const { pathname, search } = request.nextUrl;
   const sessionUser = request.auth?.user;
   const isAuthenticated = Boolean(sessionUser);
-  const isAuthPage = pathname === "/sign-in";
+  const isAuthPage = pathname === "/sign-in" || pathname === "/sign-up";
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
   const isAdminPage = pathname.startsWith("/admin");
 
