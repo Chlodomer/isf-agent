@@ -44,13 +44,13 @@ interface SubmissionItem {
 function processStyles(state: ProcessState): string {
   switch (state) {
     case "complete":
-      return "text-emerald-700 bg-emerald-100";
+      return "bg-[#e9dccb] text-[#775336]";
     case "running":
-      return "text-cyan-800 bg-cyan-100";
+      return "bg-[#e5e9ed] text-[#4f5f6f]";
     case "attention":
-      return "text-amber-700 bg-amber-100";
+      return "bg-[#f2e4d1] text-[#8a603e]";
     default:
-      return "text-slate-600 bg-slate-100";
+      return "bg-[#ede8e1] text-[#64584b]";
   }
 }
 
@@ -83,13 +83,13 @@ function processIcon(state: ProcessState) {
 function submissionBadge(state: SubmissionItem["state"]): string {
   switch (state) {
     case "ready":
-      return "bg-emerald-100 text-emerald-700";
+      return "bg-[#e9dccb] text-[#765238]";
     case "in_progress":
-      return "bg-cyan-100 text-cyan-700";
+      return "bg-[#e5e9ed] text-[#4d5d6b]";
     case "blocked":
-      return "bg-amber-100 text-amber-700";
+      return "bg-[#f2e4d1] text-[#89603f]";
     default:
-      return "bg-slate-100 text-slate-600";
+      return "bg-[#ece8e1] text-[#65594b]";
   }
 }
 
@@ -278,17 +278,17 @@ export default function WorkflowTransparencyDeck({ onAction }: WorkflowTranspare
 
   if (!expanded) {
     return (
-      <section className="mx-4 mt-3 flex-shrink-0 rounded-xl border border-teal-200/80 bg-white/90 shadow-[0_12px_28px_-26px_rgba(3,60,73,0.55)]">
+      <section className="mx-4 mt-3 flex-shrink-0 rounded-xl border border-[#d8cab8]/90 bg-white/90 shadow-[0_12px_28px_-26px_rgba(47,41,36,0.52)]">
         <div className="flex items-center justify-between gap-3 px-3 py-2.5 sm:px-4">
-          <div className="flex min-w-0 items-center gap-2 text-xs text-slate-700">
-            <Radar size={12} className="text-teal-700" />
+          <div className="flex min-w-0 items-center gap-2 text-xs text-[#5b4d3e]">
+            <Radar size={12} className="text-[#8e623c]" />
             <span className="truncate">
               Phase {phase}: {PHASE_LABELS[phase]} - {phaseProgress}% complete
             </span>
           </div>
           <button
             onClick={() => setExpanded(true)}
-            className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            className="inline-flex items-center gap-1 rounded-md border border-[#d4c4ae] bg-white px-2.5 py-1 text-xs font-medium text-[#5b4d3f] transition-colors hover:bg-[#f7efe3]"
           >
             Open dashboard
             <ChevronDown size={12} />
@@ -299,15 +299,15 @@ export default function WorkflowTransparencyDeck({ onAction }: WorkflowTranspare
   }
 
   return (
-    <section className="mx-4 mt-3 flex-shrink-0 rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white via-[#f6fbff] to-[#effaf4] shadow-[0_18px_45px_-30px_rgba(3,60,73,0.45)]">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-teal-100 px-4 py-3 sm:px-5">
+    <section className="mx-4 mt-3 flex-shrink-0 rounded-2xl border border-[#d8cab8]/90 bg-gradient-to-br from-white via-[#f9f3ea] to-[#f1e8dc] shadow-[0_18px_45px_-30px_rgba(47,41,36,0.45)]">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#e2d5c5] px-4 py-3 sm:px-5">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700/80">Faculty Command Deck</p>
-          <h2 className="font-display mt-0.5 text-base text-slate-900">Transparent process view</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#876447]">Granite Command Deck</p>
+          <h2 className="font-display mt-0.5 text-base text-[#2f2924]">Transparent process view</h2>
         </div>
         <button
           onClick={() => setExpanded(false)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[#d4c4ae] bg-white px-3 py-1.5 text-xs font-medium text-[#5b4d3f] transition-colors hover:bg-[#f7efe3]"
         >
           Hide details
           <ChevronUp size={14} />
@@ -315,52 +315,52 @@ export default function WorkflowTransparencyDeck({ onAction }: WorkflowTranspare
       </div>
 
       <div className="max-h-[34vh] space-y-4 overflow-y-auto px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-        <div className="rounded-xl border border-slate-200 bg-white/90 p-3">
+        <div className="rounded-xl border border-[#d8c9b5] bg-white/90 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#f3e4d2] px-3 py-1 text-xs font-semibold text-[#8b623d]">
               <Radar size={13} />
               Phase {phase}: {PHASE_LABELS[phase]}
             </div>
-            <div className="text-xs text-slate-500">Overall completion: {phaseProgress}%</div>
+            <div className="text-xs text-[#756351]">Overall completion: {phaseProgress}%</div>
           </div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[#ddd0c1]">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-teal-500 via-cyan-500 to-emerald-500 transition-all"
+              className="h-full rounded-full bg-gradient-to-r from-[#ab7d51] via-[#8f7d69] to-[#68747d] transition-all"
               style={{ width: `${Math.max(phaseProgress, 6)}%` }}
             />
           </div>
         </div>
 
         <div className="grid gap-3 xl:grid-cols-3">
-            <article className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="mb-3 flex items-center gap-2 text-slate-800">
-                <Bot size={16} className="text-teal-700" />
+            <article className="rounded-xl border border-[#d8c9b5] bg-white p-4">
+              <div className="mb-3 flex items-center gap-2 text-[#352d26]">
+                <Bot size={16} className="text-[#8b623d]" />
                 <h3 className="text-sm font-semibold">Latest AI update</h3>
               </div>
-              <p className="text-sm leading-relaxed text-slate-600">{latestAgentUpdate}</p>
+              <p className="text-sm leading-relaxed text-[#665646]">{latestAgentUpdate}</p>
               <button
                 onClick={() => onAction("explain-current-step")}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-800 transition-colors hover:bg-cyan-100"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[#d7c6b0] bg-[#f8eee1] px-3 py-1.5 text-xs font-semibold text-[#6c533f] transition-colors hover:bg-[#f2e3cf]"
               >
                 <Sparkles size={13} />
                 Explain this in plain language
               </button>
             </article>
 
-            <article className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="mb-3 flex items-center gap-2 text-slate-800">
-                <Activity size={16} className="text-cyan-700" />
+            <article className="rounded-xl border border-[#d8c9b5] bg-white p-4">
+              <div className="mb-3 flex items-center gap-2 text-[#352d26]">
+                <Activity size={16} className="text-[#66727d]" />
                 <h3 className="text-sm font-semibold">Ongoing processes</h3>
               </div>
               <div className="space-y-2.5">
                 {processItems.map((item) => {
                   const StatusIcon = processIcon(item.state);
                   return (
-                    <div key={item.id} className="rounded-lg bg-slate-50 p-2.5">
+                    <div key={item.id} className="rounded-lg bg-[#f8f2e8] p-2.5">
                       <div className="mb-1 flex items-center justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="truncate text-xs font-semibold text-slate-800">{item.label}</p>
-                          <p className="truncate text-xs text-slate-500">{item.detail}</p>
+                          <p className="truncate text-xs font-semibold text-[#3f342b]">{item.label}</p>
+                          <p className="truncate text-xs text-[#746351]">{item.detail}</p>
                         </div>
                         <span
                           className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${processStyles(item.state)}`}
@@ -369,9 +369,9 @@ export default function WorkflowTransparencyDeck({ onAction }: WorkflowTranspare
                           {processLabel(item.state)}
                         </span>
                       </div>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                      <div className="h-1.5 overflow-hidden rounded-full bg-[#ddd0c1]">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-teal-500 transition-all"
+                          className="h-full rounded-full bg-gradient-to-r from-[#6b7781] to-[#ab7d51] transition-all"
                           style={{ width: `${Math.max(item.progress, 4)}%` }}
                         />
                       </div>
@@ -381,16 +381,16 @@ export default function WorkflowTransparencyDeck({ onAction }: WorkflowTranspare
               </div>
             </article>
 
-            <article className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="mb-3 flex items-center gap-2 text-slate-800">
-                <FileUp size={16} className="text-emerald-700" />
+            <article className="rounded-xl border border-[#d8c9b5] bg-white p-4">
+              <div className="mb-3 flex items-center gap-2 text-[#352d26]">
+                <FileUp size={16} className="text-[#8b623d]" />
                 <h3 className="text-sm font-semibold">Submission board</h3>
               </div>
               <div className="space-y-2.5">
                 {submissions.map((item) => (
-                  <div key={item.id} className="rounded-lg border border-slate-200 p-2.5">
+                  <div key={item.id} className="rounded-lg border border-[#deceb9] p-2.5">
                     <div className="mb-1 flex items-center justify-between gap-2">
-                      <p className="text-xs font-semibold text-slate-800">{item.label}</p>
+                      <p className="text-xs font-semibold text-[#3f342b]">{item.label}</p>
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${submissionBadge(item.state)}`}>
                         {item.state === "in_progress"
                           ? "In progress"
@@ -401,7 +401,7 @@ export default function WorkflowTransparencyDeck({ onAction }: WorkflowTranspare
                           : "Pending"}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500">{item.helper}</p>
+                    <p className="text-xs text-[#746351]">{item.helper}</p>
                   </div>
                 ))}
               </div>
@@ -411,21 +411,21 @@ export default function WorkflowTransparencyDeck({ onAction }: WorkflowTranspare
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => onAction("view-status")}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-slate-800"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#302922] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#241f1a]"
           >
             <Gauge size={13} />
             Open Full Dashboard
           </button>
           <button
             onClick={() => onAction("open-draft")}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#d4c4ae] bg-white px-3 py-1.5 text-xs font-semibold text-[#5a4c3f] transition-colors hover:bg-[#f7efe3]"
           >
             <ClipboardCheck size={13} />
             Review Draft Artifacts
           </button>
           <button
             onClick={() => onAction("view-report")}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#d4c4ae] bg-white px-3 py-1.5 text-xs font-semibold text-[#5a4c3f] transition-colors hover:bg-[#f7efe3]"
           >
             <Send size={13} />
             Check Submission Readiness

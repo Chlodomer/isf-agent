@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import Image from "next/image";
 import { FileText } from "lucide-react";
 import { useProposalStore } from "@/lib/store";
 import { getNextActionText } from "@/lib/chat-actions";
@@ -26,6 +27,7 @@ export default function MainChat({
 }: MainChatProps) {
   const messages = useProposalStore((s) => s.messages);
   const phase = useProposalStore((s) => s.session.currentPhase);
+  const projectTitle = useProposalStore((s) => s.projectInfo.title);
   const interview = useProposalStore((s) => s.interview);
   const researcherInfo = useProposalStore((s) => s.researcherInfo);
   const referenceSources = useProposalStore((s) => s.referenceSources);
@@ -148,14 +150,39 @@ export default function MainChat({
   };
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 min-h-[45vh] lg:min-h-0 h-full rounded-2xl border border-[#dce6ea]/90 bg-gradient-to-b from-white/90 via-[#f8fbfc]/88 to-[#f4f8f9]/84 backdrop-blur-sm shadow-[0_24px_48px_-32px_rgba(20,40,66,0.38)]">
+    <div className="flex-1 flex flex-col min-w-0 min-h-[45vh] lg:min-h-0 h-full rounded-2xl border border-[#ddcfbf]/90 bg-gradient-to-b from-white/90 via-[#faf5ee]/88 to-[#f4ecdf]/84 backdrop-blur-sm shadow-[0_24px_48px_-32px_rgba(47,41,36,0.42)]">
+      <div className="mx-4 mt-4 rounded-xl border border-[#d8c8b3] bg-gradient-to-r from-[#fff7ec] via-[#f6ede0] to-[#ede4d8] px-4 py-3.5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <Image
+              src="/granite-logo.png"
+              alt="Granite logo"
+              width={44}
+              height={44}
+              className="h-11 w-11 flex-shrink-0 rounded-xl object-cover shadow-[0_10px_24px_-16px_rgba(47,41,36,0.65)]"
+            />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a644e]">
+                Granite Workspace
+              </p>
+              <h2 className="font-display truncate text-lg font-semibold text-[#2f2924]">
+                {projectTitle || "New Proposal"}
+              </h2>
+            </div>
+          </div>
+          <span className="rounded-full border border-[#cab7a0] bg-white/80 px-2.5 py-1 text-xs font-medium text-[#6a5642]">
+            Phase {phase}
+          </span>
+        </div>
+        <p className="mt-2 truncate text-sm text-[#695848]">Current thread: {activeThreadTitle}</p>
+      </div>
       {activeThreadRecap && (
-        <div className="mx-4 mt-4 rounded-xl border border-[#cfe0e6] bg-[#f2f8fa] px-4 py-3">
-          <div className="flex items-center gap-2 text-[#224a57]">
+        <div className="mx-4 mt-3 rounded-xl border border-[#d6c7b2] bg-[#f8f1e6] px-4 py-3">
+          <div className="flex items-center gap-2 text-[#6a5540]">
             <FileText size={16} />
             <p className="text-sm font-semibold">{activeThreadTitle} recap</p>
           </div>
-          <p className="mt-2 text-sm leading-relaxed text-[#3e5f69]">{activeThreadRecap}</p>
+          <p className="mt-2 text-sm leading-relaxed text-[#5b4c3e]">{activeThreadRecap}</p>
         </div>
       )}
       <WorkflowTransparencyDeck onAction={onAction} />

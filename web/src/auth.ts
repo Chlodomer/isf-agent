@@ -11,8 +11,16 @@ const credentialsSchema = z.object({
   password: z.string().min(1),
 });
 
+const authSecret =
+  process.env.AUTH_SECRET ??
+  (process.env.NODE_ENV === "development" ? "local-dev-insecure-secret" : undefined);
+const hasDatabaseConfig = Boolean(process.env.DATABASE_URL && process.env.DIRECT_URL);
+const devFallbackEmail = process.env.ADMIN_SEED_EMAIL?.trim().toLowerCase() ?? "admin@example.com";
+const devFallbackPassword = process.env.ADMIN_SEED_PASSWORD ?? "dev-password-1234";
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: hasDatabaseConfig ? PrismaAdapter(prisma) : undefined,
+  secret: authSecret,
   session: {
     strategy: "jwt",
   },
@@ -29,6 +37,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       authorize: async (credentials) => {
         const parsed = credentialsSchema.safeParse(credentials);
         if (!parsed.success) return null;
+
+        if (!hasDatabaseConfig && process.env.NODE_ENV === "development") {
+          const matchesEmail = parsed.data.email.toLowerCase().trim() === devFallbackEmail;
+          const matchesPassword = parsed.data.password === devFallbackPassword;
+          if (!matchesEmail || !matchesPassword) return null;
+          return {
+            id: "local-dev-admin",
+            name: process.env.ADMIN_SEED_NAME?.trim() || "Local Admin",
+            email: devFallbackEmail,
+            role: "ADMIN",
+          };
+        }
 
         const email = parsed.data.email.toLowerCase().trim();
         const user = await prisma.user.findUnique({

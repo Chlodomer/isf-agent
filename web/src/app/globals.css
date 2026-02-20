@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #f4f6f7;
-  --color-foreground: #10201c;
-  --color-sidebar: #f8fafb;
+  --color-background: #f5efe6;
+  --color-foreground: #2f2924;
+  --color-sidebar: #fbf8f3;
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
 }
@@ -15,11 +15,11 @@ html {
 body {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 12% -12%, #c9e5d6 0%, transparent 42%),
-    radial-gradient(circle at 88% -8%, #f4dfbf 0%, transparent 40%),
-    radial-gradient(circle at -8% 75%, #e9dcc8 0%, transparent 44%),
-    radial-gradient(circle at 92% 88%, #ead8cf 0%, transparent 42%),
-    linear-gradient(180deg, #f9f6f2 0%, #f1ece6 100%);
+    radial-gradient(circle at 10% -8%, #f1ddbf 0%, transparent 40%),
+    radial-gradient(circle at 86% -4%, #ded2c3 0%, transparent 42%),
+    radial-gradient(circle at -8% 78%, #e5d6c2 0%, transparent 44%),
+    radial-gradient(circle at 94% 88%, #d9d0c5 0%, transparent 40%),
+    linear-gradient(180deg, #fbf8f3 0%, #f2eadf 100%);
   background-attachment: fixed;
   color: var(--color-foreground);
   font-family: var(--font-sans);
