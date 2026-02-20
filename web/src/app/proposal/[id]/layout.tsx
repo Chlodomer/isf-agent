@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { findOwnedThread } from "@/lib/user-data";
 
 const LOCAL_THREAD_ID_PREFIX = "thread-";
 
@@ -31,15 +31,7 @@ export default async function ProposalLayout({
   const { id } = await params;
   const isWorkspaceRoot = id === "new";
   if (!isWorkspaceRoot && !isLocalThreadId(id)) {
-    const allowedThread = await prisma.thread.findFirst({
-      where: {
-        id,
-        project: {
-          ownerUserId: userId,
-        },
-      },
-      select: { id: true },
-    });
+    const allowedThread = await findOwnedThread(userId, id);
 
     if (!allowedThread) {
       redirect("/proposal/new");

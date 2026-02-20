@@ -231,6 +231,20 @@ function deriveThreadRecap(messages: ChatMessage[]): string | null {
   return `Primary topic: ${opening} Latest point: ${latest}`;
 }
 
+function downloadJsonFile(filename: string, payload: unknown) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 export default function ProposalWorkspace() {
   const params = useParams<{ id: string }>();
   const routeThreadId =
@@ -601,6 +615,56 @@ export default function ProposalWorkspace() {
               : "Run /validate and clear blockers before final assembly.",
           ].join(" "),
         });
+      } else if (action === "export-data" || action === "/export") {
+        if (action.startsWith("/")) {
+          addMessage({
+            id: `action-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+            type: "text",
+            role: "user",
+            content: action,
+          });
+        }
+
+        void (async () => {
+          let serverWorkspace: unknown = null;
+          let serverExportError: string | null = null;
+
+          try {
+            const response = await fetch("/api/export", { method: "GET" });
+            if (response.ok) {
+              serverWorkspace = await response.json();
+            } else {
+              serverExportError = `Server export failed (${response.status}).`;
+            }
+          } catch {
+            serverExportError = "Server export failed (network error).";
+          }
+
+          const now = new Date();
+          const compactTimestamp = now.toISOString().replace(/[:.]/g, "-");
+          const payload = {
+            exportedAt: now.toISOString(),
+            scope: "granite-user-export",
+            localWorkspace: {
+              activeThreadId,
+              threadCount: threads.length,
+              threads,
+              researcherInfo,
+            },
+            serverWorkspace,
+            serverExportError,
+          };
+
+          downloadJsonFile(`granite-export-${compactTimestamp}.json`, payload);
+          addMessage({
+            id: `export-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+            type: "text",
+            role: "agent",
+            content: serverExportError
+              ? `Export downloaded with local workspace data. ${serverExportError}`
+              : "Export downloaded. It includes local workspace history and server-owned records.",
+          });
+        })();
       } else if (action === "/sources") {
         addMessage({
           id: `action-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
@@ -718,6 +782,8 @@ export default function ProposalWorkspace() {
       researcherInfo,
       resources,
       setValidation,
+      activeThreadId,
+      threads,
       validation,
     ]
   );
