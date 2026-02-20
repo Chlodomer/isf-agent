@@ -12,12 +12,12 @@ export default function WelcomeCard({ onAction }: WelcomeCardProps) {
   const greeting = name?.trim() ? `Welcome, ${name.trim()}` : "Welcome";
 
   return (
-    <div className="my-4 rounded-lg border border-[#dac9b2] bg-gradient-to-br from-white via-[#fffaf4] to-[#f7efe3] shadow-[0_16px_34px_-30px_rgba(47,41,36,0.65)]">
-      <div className="p-6">
+    <div className="mt-3 mb-2 rounded-lg border border-[#dac9b2] bg-gradient-to-br from-white via-[#fffaf4] to-[#f7efe3] shadow-[0_16px_34px_-30px_rgba(47,41,36,0.65)]">
+      <div className="p-5">
         <h2 className="font-display text-2xl font-semibold text-[#2f2924] mb-2">
           {greeting} to Granite
         </h2>
-        <p className="text-base text-[#665645] leading-relaxed mb-6">
+        <p className="text-base text-[#665645] leading-relaxed mb-5">
           Granite helps you prepare a competitive proposal for the Israel Science
           Foundation Personal Research Grant. The process has 7 phases and
           typically takes a few sessions. We can save progress and resume
@@ -80,7 +80,7 @@ export default function WelcomeCard({ onAction }: WelcomeCardProps) {
           </button>
         </div>
 
-        <div className="mt-5 rounded-lg border border-[#d9c9b5] bg-[#fbf5ec] px-4 py-3">
+        <div className="mt-4 rounded-lg border border-[#d9c9b5] bg-[#fbf5ec] px-4 py-3">
           <p className="text-sm font-semibold uppercase tracking-wide text-[#735d46] mb-2">You Can Type Naturally</p>
           <p className="text-base text-[#5e5042] leading-relaxed">
             No special command syntax is required. Try plain requests like:

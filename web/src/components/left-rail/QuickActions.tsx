@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, BarChart3, HelpCircle, RotateCcw, ShieldCheck } from "lucide-react";
+import { Upload, BarChart3, HelpCircle, RotateCcw, ShieldCheck, Download } from "lucide-react";
 
 interface QuickActionsProps {
   onAction: (action: string) => void;
@@ -11,6 +11,7 @@ export default function QuickActions({ onAction }: QuickActionsProps) {
     { icon: Upload, label: "Upload Past Proposal", action: "upload" },
     { icon: BarChart3, label: "Open Dashboard", action: "view-status" },
     { icon: ShieldCheck, label: "Submission Readiness", action: "open-readiness" },
+    { icon: Download, label: "Export My Data", action: "export-data" },
     { icon: HelpCircle, label: "Explain This Phase", action: "explain-current-step" },
     { icon: RotateCcw, label: "Replay Onboarding", action: "replay-onboarding" },
   ];
