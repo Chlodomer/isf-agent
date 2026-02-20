@@ -14,7 +14,7 @@ export default function SuggestedActionsBar({ onAction }: SuggestedActionsBarPro
   if (actions.length === 0) return null;
 
   return (
-    <div className="flex gap-2 px-4 py-2.5 overflow-x-auto border-t border-[#dde6ea] bg-gradient-to-r from-white via-[#f6fafc] to-[#f3f7fa]">
+    <div className="flex gap-2 overflow-x-auto border-t border-[#ddcdb9] bg-gradient-to-r from-white via-[#faf4eb] to-[#f3ebe0] px-4 py-2.5">
       {actions.map((action: SuggestedAction) => (
         <button
           key={action.command}
@@ -23,8 +23,8 @@ export default function SuggestedActionsBar({ onAction }: SuggestedActionsBarPro
             flex-shrink-0 text-[15px] px-3.5 py-2 rounded-full border transition-colors
             ${
               action.variant === "approve"
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                : "bg-white/90 text-slate-600 border-[#dbe2e7] hover:bg-[#f2f7fa] hover:text-slate-800"
+                ? "border-[#cfb18f] bg-[#f8ebd9] text-[#7c5636] hover:bg-[#f0dec5]"
+                : "border-[#d7c5ad] bg-white/90 text-[#5d4f41] hover:bg-[#f8efe3] hover:text-[#473c31]"
             }
           `}
         >

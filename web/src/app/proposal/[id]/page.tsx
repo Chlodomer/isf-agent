@@ -748,7 +748,7 @@ export default function ProposalWorkspace() {
 
   return (
     <div className="relative flex h-screen flex-col gap-3 bg-transparent p-2 lg:flex-row lg:p-3">
-      <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_20%_20%,rgba(88,139,131,0.10),transparent_45%),radial-gradient(circle_at_78%_18%,rgba(160,140,104,0.11),transparent_42%),radial-gradient(circle_at_30%_84%,rgba(103,129,157,0.10),transparent_44%)]" />
+      <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_20%_20%,rgba(186,136,86,0.13),transparent_45%),radial-gradient(circle_at_78%_18%,rgba(120,110,96,0.11),transparent_42%),radial-gradient(circle_at_30%_84%,rgba(92,102,114,0.10),transparent_44%)]" />
       <div className="relative z-10 contents">
         <LeftRail onPhaseClick={handlePhaseClick} onAction={handleAction} />
         <ThreadColumn
@@ -773,7 +773,7 @@ export default function ProposalWorkspace() {
       {!demoLoaded && (
         <button
           onClick={loadDemo}
-          className="fixed bottom-4 right-4 flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 text-white text-sm shadow-lg hover:bg-slate-800 transition-colors z-50"
+          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-[#312a24] px-4 py-2 text-sm text-white shadow-lg transition-colors hover:bg-[#241f1b]"
         >
           <Eye size={16} />
           Load Demo Flow

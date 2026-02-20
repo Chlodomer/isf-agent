@@ -55,14 +55,14 @@ export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputP
 
   return (
     <div
-      className="relative border-t border-[#d8e1e5] bg-gradient-to-r from-white via-[#f7fafb] to-[#f3f7f9]"
+      className="relative border-t border-[#dccdb9] bg-gradient-to-r from-white via-[#faf4ec] to-[#f3ece2]"
       onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
       onDragLeave={() => setIsDragOver(false)}
       onDrop={handleDrop}
     >
       {isDragOver && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-teal-50/90 border-2 border-dashed border-teal-300 rounded-lg m-1">
-          <p className="text-base font-medium text-teal-700">
+        <div className="absolute inset-0 z-10 m-1 flex items-center justify-center rounded-lg border-2 border-dashed border-[#c9ae90] bg-[#fff2e0]/90">
+          <p className="text-base font-medium text-[#7a5738]">
             Drop your proposal, CV, or review file here
           </p>
         </div>
@@ -71,7 +71,7 @@ export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputP
       <div className="flex items-end gap-2 p-3">
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex-shrink-0 p-2.5 text-slate-400 hover:text-slate-600 transition-colors rounded-lg hover:bg-[#edf3f6]"
+          className="flex-shrink-0 rounded-lg p-2.5 text-[#8e7a65] transition-colors hover:bg-[#f3e9db] hover:text-[#665241]"
           aria-label="Attach file"
         >
           <Paperclip size={20} />
@@ -94,20 +94,20 @@ export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputP
           placeholder="Ask in plain language (for example: Help me improve this section)..."
           disabled={disabled}
           rows={1}
-          className="flex-1 resize-none border border-[#d8e2e6] rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 disabled:opacity-50 bg-[#f8fbfc]"
+          className="flex-1 resize-none rounded-lg border border-[#d8c9b6] bg-[#fdf8f1] px-4 py-3 text-base focus:border-[#ab7e52] focus:outline-none focus:ring-2 focus:ring-[#d6b695]/50 disabled:opacity-50"
         />
 
         <button
           onClick={handleSubmit}
           disabled={!value.trim() || disabled}
-          className="flex-shrink-0 p-2.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          className="flex-shrink-0 rounded-lg bg-[#986c43] p-2.5 text-white transition-colors hover:bg-[#845a38] disabled:cursor-not-allowed disabled:opacity-30"
           aria-label="Send message"
         >
           <ArrowUp size={20} />
         </button>
       </div>
 
-      <div className="px-4 pb-3 text-sm text-slate-500">
+      <div className="px-4 pb-3 text-sm text-[#756451]">
         No special commands required. Just describe what you need.
       </div>
     </div>

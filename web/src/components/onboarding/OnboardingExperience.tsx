@@ -24,7 +24,7 @@ interface OnboardingStep {
 const STEPS: OnboardingStep[] = [
   {
     id: 1,
-    title: "Welcome to the ISF Grant Assistant",
+    title: "Welcome to Granite",
     summary: "This onboarding takes about two minutes and sets up your personalized workspace.",
     points: [
       "You will move through a short guided flow.",
@@ -173,11 +173,11 @@ export default function OnboardingExperience({ onComplete }: OnboardingExperienc
         <div className="flex items-center gap-3">
           <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-[#d9ccba] bg-[#f4ece1]">
             <Image
-              src="/window.svg"
-              alt="ISF assistant logo"
-              width={28}
-              height={28}
-              className="opacity-80"
+              src="/granite-logo.png"
+              alt="Granite logo"
+              width={40}
+              height={40}
+              className="h-10 w-10 rounded-lg object-cover"
             />
           </div>
           <div>

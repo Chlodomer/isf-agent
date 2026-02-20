@@ -13,8 +13,13 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "ISF Grant Writing Assistant",
-  description: "AI-powered assistant for Israel Science Foundation grant proposals",
+  title: "Granite",
+  description: "Granite helps prepare ISF grant proposals with guided workflows.",
+  icons: {
+    icon: "/granite-logo.png",
+    apple: "/granite-logo.png",
+    shortcut: "/granite-logo.png",
+  },
 };
 
 export default function RootLayout({
