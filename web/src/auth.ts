@@ -14,6 +14,18 @@ const credentialsSchema = z.object({
 const authSecret =
   process.env.AUTH_SECRET ??
   (process.env.NODE_ENV === "development" ? "local-dev-insecure-secret" : undefined);
+const normalizedAuthUrl =
+  process.env.NODE_ENV === "development" &&
+  process.env.AUTH_URL &&
+  process.env.AUTH_URL.includes("vercel.app")
+    ? "http://localhost:3000"
+    : process.env.AUTH_URL;
+
+if (normalizedAuthUrl) {
+  process.env.AUTH_URL = normalizedAuthUrl;
+  process.env.NEXTAUTH_URL = normalizedAuthUrl;
+}
+
 const hasDatabaseConfig = Boolean(process.env.DATABASE_URL && process.env.DIRECT_URL);
 const devFallbackEmail = process.env.ADMIN_SEED_EMAIL?.trim().toLowerCase() ?? "admin@example.com";
 const devFallbackPassword = process.env.ADMIN_SEED_PASSWORD ?? "dev-password-1234";
