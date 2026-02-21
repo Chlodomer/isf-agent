@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import { findOwnedThread } from "@/lib/user-data";
@@ -39,6 +40,10 @@ export default async function ProposalLayout({
   }
 
   const isAdmin = session.user.role === "ADMIN";
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? (host?.includes("localhost") ? "http" : "https");
+  const adminHref = host ? `${protocol}://${host}/admin` : "/admin";
 
   async function handleSignOut() {
     "use server";
@@ -51,7 +56,7 @@ export default async function ProposalLayout({
         <span className="max-w-[220px] truncate text-slate-600">{session.user.email}</span>
         {isAdmin && (
           <Link
-            href="/admin"
+            href={adminHref}
             className="rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 font-medium text-slate-700 hover:bg-slate-200"
           >
             Admin
