@@ -21,8 +21,12 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-if (!("scrollIntoView" in HTMLElement.prototype)) {
-  HTMLElement.prototype.scrollIntoView = vi.fn();
+if (typeof HTMLElement.prototype.scrollIntoView !== "function") {
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+    value: vi.fn(),
+    configurable: true,
+    writable: true,
+  });
 }
 
 class MockResizeObserver {
@@ -38,6 +42,5 @@ class MockResizeObserver {
 }
 
 if (!("ResizeObserver" in globalThis)) {
-  // @ts-expect-error test polyfill
   globalThis.ResizeObserver = MockResizeObserver;
 }
