@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, BarChart3, HelpCircle, RotateCcw, ShieldCheck, Download } from "lucide-react";
+import { Upload, BarChart3, HelpCircle, RotateCcw, ShieldCheck, Download, Settings } from "lucide-react";
 
 interface QuickActionsProps {
   onAction: (action: string) => void;
@@ -14,6 +14,7 @@ export default function QuickActions({ onAction }: QuickActionsProps) {
     { icon: Download, label: "Export My Data", action: "export-data" },
     { icon: HelpCircle, label: "Explain This Phase", action: "explain-current-step" },
     { icon: RotateCcw, label: "Replay Onboarding", action: "replay-onboarding" },
+    { icon: Settings, label: "Chat Settings", action: "open-settings" },
   ];
 
   return (

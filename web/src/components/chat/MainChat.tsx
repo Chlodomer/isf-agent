@@ -1,29 +1,36 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 import { FileText } from "lucide-react";
 import { useProposalStore } from "@/lib/store";
 import { getNextActionText } from "@/lib/chat-actions";
 import { buildLocalAgentReply } from "@/lib/local-agent";
-import { fetchAssistantReply } from "@/lib/chat-backend";
+import { streamAssistantReply } from "@/lib/chat-backend";
 import { INTERVIEW_SECTIONS, type ReferenceSource } from "@/lib/types";
 import NextActionBanner from "./NextActionBanner";
 import MessageThread from "./MessageThread";
 import SuggestedActionsBar from "./SuggestedActionsBar";
 import ChatInput from "./ChatInput";
+import ChatPersistenceBanner from "./ChatPersistenceBanner";
 import WorkflowTransparencyDeck from "./WorkflowTransparencyDeck";
 
 interface MainChatProps {
   onAction: (action: string) => void;
   activeThreadTitle?: string;
   activeThreadRecap?: string | null;
+  showPersistenceBanner?: boolean;
+  onAcceptPersistence?: () => void;
+  onDismissPersistence?: () => void;
 }
 
 export default function MainChat({
   onAction,
   activeThreadTitle = "Current thread",
   activeThreadRecap = null,
+  showPersistenceBanner = false,
+  onAcceptPersistence,
+  onDismissPersistence,
 }: MainChatProps) {
   const messages = useProposalStore((s) => s.messages);
   const phase = useProposalStore((s) => s.session.currentPhase);
@@ -33,7 +40,9 @@ export default function MainChat({
   const referenceSources = useProposalStore((s) => s.referenceSources);
   const addReferenceSources = useProposalStore((s) => s.addReferenceSources);
   const addMessage = useProposalStore((s) => s.addMessage);
+  const updateMessage = useProposalStore((s) => s.updateMessage);
   const [isSending, setIsSending] = useState(false);
+  const accumulatedRef = useRef("");
 
   // Compute next action text
   const interviewProgress = interview.currentSection
@@ -115,38 +124,52 @@ export default function MainChat({
     }
 
     setIsSending(true);
-    void (async () => {
-      try {
-        const assistantContent = await fetchAssistantReply(messages, content, {
-          name: researcherInfo.name,
-          affiliation: researcherInfo.department,
-          sources: referenceSources.map((source) => ({
-            id: source.id,
-            label: source.label,
-            filename: source.filename,
-          })),
-        });
-        addMessage({
-          id: `msg-${Date.now()}-assistant`,
-          type: "text",
-          role: "agent",
-          content: assistantContent,
-        });
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Unexpected backend error.";
-        addMessage({
-          id: `msg-${Date.now()}-assistant-error`,
-          type: "text",
-          role: "agent",
-          content: `I couldn't complete the request: ${message}`,
-        });
-      } finally {
+    const assistantMsgId = `msg-${Date.now()}-assistant`;
+    accumulatedRef.current = "";
+
+    addMessage({
+      id: assistantMsgId,
+      type: "text",
+      role: "agent",
+      content: "",
+    });
+
+    let rafPending = false;
+
+    void streamAssistantReply(
+      messages,
+      content,
+      {
+        name: researcherInfo.name,
+        affiliation: researcherInfo.department,
+        sources: referenceSources.map((source) => ({
+          id: source.id,
+          label: source.label,
+          filename: source.filename,
+        })),
+      },
+      (token) => {
+        accumulatedRef.current += token;
+        if (!rafPending) {
+          rafPending = true;
+          requestAnimationFrame(() => {
+            rafPending = false;
+            updateMessage(assistantMsgId, accumulatedRef.current);
+          });
+        }
+      },
+      () => {
+        // Flush any remaining tokens
+        updateMessage(assistantMsgId, accumulatedRef.current);
         setIsSending(false);
-      }
-    })();
+      },
+      (error) => {
+        if (accumulatedRef.current.length === 0) {
+          updateMessage(assistantMsgId, `I couldn't complete the request: ${error}`);
+        }
+        setIsSending(false);
+      },
+    );
   };
 
   return (
@@ -189,6 +212,12 @@ export default function MainChat({
       <NextActionBanner text={nextActionText} />
       <MessageThread messages={messages} onAction={onAction} isLoading={isSending} />
       <SuggestedActionsBar onAction={onAction} />
+      {showPersistenceBanner && onAcceptPersistence && onDismissPersistence && (
+        <ChatPersistenceBanner
+          onAccept={onAcceptPersistence}
+          onDismiss={onDismissPersistence}
+        />
+      )}
       <ChatInput onSend={handleSend} onFileUpload={registerUploadedSources} disabled={isSending} />
     </div>
   );

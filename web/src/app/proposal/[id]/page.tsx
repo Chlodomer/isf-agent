@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useProposalStore } from "@/lib/store";
 import { DEMO_MESSAGES } from "@/lib/demo-data";
 import LeftRail from "@/components/left-rail/LeftRail";
@@ -11,9 +11,12 @@ import OnboardingExperience from "@/components/onboarding/OnboardingExperience";
 import type { OnboardingProfile } from "@/components/onboarding/OnboardingExperience";
 import type { ChatMessage, Phase } from "@/lib/types";
 import { buildLocalAgentReply } from "@/lib/local-agent";
-import { fetchAssistantReply } from "@/lib/chat-backend";
+import { streamAssistantReply } from "@/lib/chat-backend";
 import { runComplianceValidation } from "@/lib/compliance";
 import { buildReadinessSnapshot } from "@/lib/readiness";
+import { useChatPersistence } from "@/lib/use-chat-persistence";
+import ChatPersistenceBanner from "@/components/chat/ChatPersistenceBanner";
+import ChatSettingsModal from "@/components/settings/ChatSettingsModal";
 import { Eye } from "lucide-react";
 import { useParams } from "next/navigation";
 
@@ -254,6 +257,7 @@ export default function ProposalWorkspace() {
   const activeContextTab = useProposalStore((s) => s.ui.activeContextTab);
   const addMessage = useProposalStore((s) => s.addMessage);
   const setMessages = useProposalStore((s) => s.setMessages);
+  const updateMessage = useProposalStore((s) => s.updateMessage);
   const openContextPanel = useProposalStore((s) => s.openContextPanel);
   const toggleContextPanel = useProposalStore((s) => s.toggleContextPanel);
   const researcherInfo = useProposalStore((s) => s.researcherInfo);
@@ -271,7 +275,9 @@ export default function ProposalWorkspace() {
   const [threadsCollapsed, setThreadsCollapsed] = useState(false);
   const [threadsLoaded, setThreadsLoaded] = useState(false);
   const [demoLoaded, setDemoLoaded] = useState(false);
+  const actionStreamRef = useRef("");
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus>("checking");
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Resolve onboarding status from localStorage on mount
   useEffect(() => {
@@ -432,6 +438,48 @@ export default function ProposalWorkspace() {
     }
   }, [activeThreadId, threads, threadsCollapsed, threadsLoaded]);
 
+  const activeTitle =
+    threads.find((t) => t.id === activeThreadId)?.title ?? "New thread";
+  const { consent: persistenceConsent, updateConsent, showBanner, dismissBanner } =
+    useChatPersistence(activeThreadId, activeTitle);
+
+  const handleAcceptPersistence = useCallback(async () => {
+    const success = await updateConsent(true);
+    if (success && threads.length > 0) {
+      // Bulk-sync existing localStorage threads to DB
+      void fetch("/api/threads/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          threads: threads.map((t) => ({
+            clientThreadId: t.id,
+            title: t.title,
+            titleOrigin: t.titleOrigin ?? "auto",
+            messages: t.messages
+              .filter((m): m is Extract<ChatMessage, { type: "text" }> => m.type === "text")
+              .map((m) => ({
+                role: m.role === "agent" ? "assistant" : "user",
+                type: m.type,
+                content: m.content,
+              })),
+          })),
+        }),
+      });
+      addMessage({
+        id: `persistence-${Date.now()}`,
+        type: "text",
+        role: "agent",
+        content:
+          "Chat history saving is now enabled. Your existing conversations have been saved to your account.",
+      });
+    }
+    dismissBanner();
+  }, [addMessage, dismissBanner, threads, updateConsent]);
+
+  const handleDismissBanner = useCallback(() => {
+    dismissBanner();
+  }, [dismissBanner]);
+
   const loadDemo = useCallback(() => {
     if (demoLoaded) return;
     setMessages(DEMO_MESSAGES);
@@ -565,7 +613,10 @@ export default function ProposalWorkspace() {
 
   const handleAction = useCallback(
     (action: string) => {
-      if (action === "show-welcome" || action === "welcome" || action === "/welcome") {
+      if (action === "open-settings") {
+        setSettingsOpen(true);
+        return;
+      } else if (action === "show-welcome" || action === "welcome" || action === "/welcome") {
         addMessage(createWelcomeMessage());
       } else if (action === "start-fresh") {
         handleCreateThread();
@@ -774,30 +825,40 @@ export default function ProposalWorkspace() {
           return;
         }
 
-        void (async () => {
-          try {
-            const assistantContent = await fetchAssistantReply(
-              messages,
-              content,
-              conversationContext()
-            );
-            addMessage({
-              id: `action-assistant-${Date.now()}`,
-              type: "text",
-              role: "agent",
-              content: assistantContent,
-            });
-          } catch (error) {
-            const message =
-              error instanceof Error ? error.message : "Unexpected backend error.";
-            addMessage({
-              id: `action-assistant-error-${Date.now()}`,
-              type: "text",
-              role: "agent",
-              content: `I couldn't complete the request: ${message}`,
-            });
-          }
-        })();
+        const assistantMsgId = `action-assistant-${Date.now()}`;
+        actionStreamRef.current = "";
+        addMessage({
+          id: assistantMsgId,
+          type: "text",
+          role: "agent",
+          content: "",
+        });
+
+        let rafPending = false;
+
+        void streamAssistantReply(
+          messages,
+          content,
+          conversationContext(),
+          (token) => {
+            actionStreamRef.current += token;
+            if (!rafPending) {
+              rafPending = true;
+              requestAnimationFrame(() => {
+                rafPending = false;
+                updateMessage(assistantMsgId, actionStreamRef.current);
+              });
+            }
+          },
+          () => {
+            updateMessage(assistantMsgId, actionStreamRef.current);
+          },
+          (error) => {
+            if (actionStreamRef.current.length === 0) {
+              updateMessage(assistantMsgId, `I couldn't complete the request: ${error}`);
+            }
+          },
+        );
       }
     },
     [
@@ -807,6 +868,7 @@ export default function ProposalWorkspace() {
       messages,
       openContextPanel,
       toggleContextPanel,
+      updateMessage,
       phase,
       projectInfo,
       proposalSections,
@@ -867,9 +929,20 @@ export default function ProposalWorkspace() {
           onAction={handleAction}
           activeThreadTitle={activeThreadTitle}
           activeThreadRecap={activeThreadRecap}
+          showPersistenceBanner={showBanner}
+          onAcceptPersistence={handleAcceptPersistence}
+          onDismissPersistence={handleDismissBanner}
         />
         {contextPanelOpen && <ContextPanel onAction={handleAction} />}
       </div>
+
+      {settingsOpen && (
+        <ChatSettingsModal
+          consent={persistenceConsent}
+          onUpdateConsent={updateConsent}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
 
       {/* Demo mode toggle */}
       {!demoLoaded && (

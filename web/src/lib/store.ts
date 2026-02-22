@@ -35,14 +35,19 @@ interface ProposalStore {
   // Chat state
   messages: ChatMessage[];
 
+  // Persistence
+  chatPersistenceConsent: boolean | null;
+
   // UI state
   ui: UIState;
 
   // Actions
+  setChatPersistenceConsent: (consent: boolean | null) => void;
   setPhase: (phase: Phase) => void;
   setResearcherInfo: (info: Partial<ResearcherInfo>) => void;
   addMessage: (message: ChatMessage) => void;
   setMessages: (messages: ChatMessage[]) => void;
+  updateMessage: (id: string, content: string) => void;
   toggleContextPanel: () => void;
   setContextTab: (tab: ContextTab) => void;
   openContextPanel: (tab: ContextTab) => void;
@@ -187,7 +192,11 @@ export const useProposalStore = create<ProposalStore>((set) => ({
   validation: initialValidation,
   learnings: initialLearnings,
   messages: [],
+  chatPersistenceConsent: null,
   ui: initialUI,
+
+  setChatPersistenceConsent: (consent) =>
+    set(() => ({ chatPersistenceConsent: consent })),
 
   setPhase: (phase) =>
     set((state) => ({
@@ -214,6 +223,15 @@ export const useProposalStore = create<ProposalStore>((set) => ({
   setMessages: (messages) =>
     set(() => ({
       messages,
+    })),
+
+  updateMessage: (id, content) =>
+    set((state) => ({
+      messages: state.messages.map((msg) =>
+        msg.id === id && msg.type === "text"
+          ? { ...msg, content }
+          : msg
+      ),
     })),
 
   toggleContextPanel: () =>

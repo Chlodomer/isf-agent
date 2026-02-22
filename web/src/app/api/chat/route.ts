@@ -19,16 +19,16 @@ interface ChatRequestBody {
   };
 }
 
-interface AnthropicContentBlock {
-  type?: string;
-  text?: string;
-}
-
-interface AnthropicMessageResponse {
-  content?: AnthropicContentBlock[];
+interface AnthropicErrorResponse {
   error?: {
     message?: string;
   };
+}
+
+interface AnthropicStreamEvent {
+  type: string;
+  delta?: { type?: string; text?: string };
+  error?: { message?: string };
 }
 
 const SYSTEM_PROMPT = [
@@ -163,35 +163,93 @@ export async function POST(request: Request) {
       temperature: 0.4,
       system: systemPrompt,
       messages,
+      stream: true,
     }),
   });
 
-  const data = (await upstream.json()) as AnthropicMessageResponse;
-
   if (!upstream.ok) {
-    return NextResponse.json(
-      {
-        error:
-          data.error?.message ||
-          `Anthropic request failed with status ${upstream.status}.`,
-      },
-      { status: upstream.status }
-    );
+    // Anthropic returns JSON errors even when stream: true was requested
+    let errorMessage = `Anthropic request failed with status ${upstream.status}.`;
+    try {
+      const errorData = (await upstream.json()) as AnthropicErrorResponse;
+      if (errorData.error?.message) {
+        errorMessage = errorData.error.message;
+      }
+    } catch {
+      // Use default error message
+    }
+    return NextResponse.json({ error: errorMessage }, { status: upstream.status });
   }
 
-  const assistantMessage = data.content
-    ?.filter((block) => block.type === "text" && typeof block.text === "string")
-    .map((block) => block.text?.trim())
-    .filter((text): text is string => Boolean(text))
-    .join("\n")
-    .trim();
-
-  if (!assistantMessage) {
+  if (!upstream.body) {
     return NextResponse.json(
-      { error: "The model returned an empty response." },
+      { error: "No response body from upstream." },
       { status: 502 }
     );
   }
 
-  return NextResponse.json({ message: assistantMessage });
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const reader = upstream.body!.getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const data = line.slice(6).trim();
+            if (data === "[DONE]") continue;
+
+            try {
+              const event = JSON.parse(data) as AnthropicStreamEvent;
+              if (
+                event.type === "content_block_delta" &&
+                event.delta?.type === "text_delta" &&
+                event.delta.text
+              ) {
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify({ token: event.delta.text })}\n\n`)
+                );
+              } else if (event.type === "message_stop") {
+                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+              } else if (event.type === "error") {
+                controller.enqueue(
+                  encoder.encode(
+                    `data: ${JSON.stringify({ error: event.error?.message || "Stream error" })}\n\n`
+                  )
+                );
+              }
+            } catch {
+              // Skip unparseable lines
+            }
+          }
+        }
+        // Ensure DONE is sent if not already
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      } catch {
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ error: "Stream interrupted" })}\n\n`)
+        );
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
 }
