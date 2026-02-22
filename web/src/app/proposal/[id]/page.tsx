@@ -250,9 +250,11 @@ export default function ProposalWorkspace() {
   const routeThreadId =
     typeof params?.id === "string" && params.id !== "new" ? params.id : null;
   const contextPanelOpen = useProposalStore((s) => s.ui.contextPanelOpen);
+  const activeContextTab = useProposalStore((s) => s.ui.activeContextTab);
   const addMessage = useProposalStore((s) => s.addMessage);
   const setMessages = useProposalStore((s) => s.setMessages);
   const openContextPanel = useProposalStore((s) => s.openContextPanel);
+  const toggleContextPanel = useProposalStore((s) => s.toggleContextPanel);
   const researcherInfo = useProposalStore((s) => s.researcherInfo);
   const setResearcherInfo = useProposalStore((s) => s.setResearcherInfo);
   const requirements = useProposalStore((s) => s.requirements);
@@ -586,7 +588,11 @@ export default function ProposalWorkspace() {
         action === "view-operations" ||
         action === "operations"
       ) {
-        openContextPanel("operations");
+        if (contextPanelOpen && activeContextTab === "operations") {
+          toggleContextPanel();
+        } else {
+          openContextPanel("operations");
+        }
       } else if (action === "open-readiness" || action === "/readiness" || action === "/checklist") {
         if (action.startsWith("/")) {
           addMessage({
@@ -774,6 +780,7 @@ export default function ProposalWorkspace() {
       conversationContext,
       messages,
       openContextPanel,
+      toggleContextPanel,
       projectInfo,
       proposalSections,
       referenceSources,
@@ -782,7 +789,9 @@ export default function ProposalWorkspace() {
       researcherInfo,
       resources,
       setValidation,
+      activeContextTab,
       activeThreadId,
+      contextPanelOpen,
       threads,
       validation,
     ]
