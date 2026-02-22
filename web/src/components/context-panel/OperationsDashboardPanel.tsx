@@ -9,6 +9,7 @@ import {
   ListChecks,
   Radar,
   ShieldCheck,
+  X,
   TriangleAlert,
 } from "lucide-react";
 import { useProposalStore } from "@/lib/store";
@@ -49,6 +50,7 @@ export default function OperationsDashboardPanel() {
   const validation = useProposalStore((s) => s.validation);
   const requirementsFetched = useProposalStore((s) => s.requirements.fetched);
   const setContextTab = useProposalStore((s) => s.setContextTab);
+  const toggleContextPanel = useProposalStore((s) => s.toggleContextPanel);
 
   const completedPhases = phase - 1;
   const phasePercent = Math.round((completedPhases / 7) * 100);
@@ -110,8 +112,20 @@ export default function OperationsDashboardPanel() {
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-slate-200 px-4 py-3">
-        <h3 className="font-display text-sm text-slate-900">Operations Dashboard</h3>
-        <p className="mt-1 text-xs text-slate-500">Clear view of where the process stands right now.</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="font-display text-sm text-slate-900">Operations Dashboard</h3>
+            <p className="mt-1 text-xs text-slate-500">Clear view of where the process stands right now.</p>
+          </div>
+          <button
+            onClick={toggleContextPanel}
+            className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-800"
+            aria-label="Collapse operations dashboard"
+          >
+            <X size={12} />
+            Close
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-4">

@@ -112,7 +112,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) {
     return NextResponse.json(
       {
@@ -143,7 +143,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514";
+  const configuredModel = process.env.ANTHROPIC_MODEL
+    ?.trim()
+    .replace(/^['"]|['"]$/g, "");
+  const model = configuredModel || "claude-sonnet-4-20250514";
   const contextPrompt = buildContextPrompt(body.context);
   const systemPrompt = contextPrompt ? `${SYSTEM_PROMPT} ${contextPrompt}` : SYSTEM_PROMPT;
 
