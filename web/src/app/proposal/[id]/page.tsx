@@ -249,6 +249,7 @@ export default function ProposalWorkspace() {
   const params = useParams<{ id: string }>();
   const routeThreadId =
     typeof params?.id === "string" && params.id !== "new" ? params.id : null;
+  const phase = useProposalStore((s) => s.session.currentPhase);
   const contextPanelOpen = useProposalStore((s) => s.ui.contextPanelOpen);
   const activeContextTab = useProposalStore((s) => s.ui.activeContextTab);
   const addMessage = useProposalStore((s) => s.addMessage);
@@ -564,7 +565,31 @@ export default function ProposalWorkspace() {
 
   const handleAction = useCallback(
     (action: string) => {
-      if (action === "onboarding" || action === "/onboarding" || action === "replay-onboarding") {
+      if (action === "show-welcome" || action === "welcome" || action === "/welcome") {
+        addMessage(createWelcomeMessage());
+      } else if (action === "start-fresh") {
+        handleCreateThread();
+      } else if (action === "upload-first" || action === "/learn-from-grant") {
+        addMessage({
+          id: `upload-card-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          type: "file_upload",
+          role: "agent",
+        });
+      } else if (action === "resume") {
+        const completedPhases = Array.from(
+          { length: Math.max(phase - 1, 0) },
+          (_, index) => (index + 1) as Phase
+        );
+        addMessage({
+          id: `resume-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          type: "resume_session",
+          role: "agent",
+          proposalTitle: projectInfo.title ?? null,
+          currentPhase: phase,
+          completedPhases,
+          lastActive: new Date().toLocaleString(),
+        });
+      } else if (action === "onboarding" || action === "/onboarding" || action === "replay-onboarding") {
         replayOnboarding();
       } else if (
         action === "view-learnings" ||
@@ -778,9 +803,11 @@ export default function ProposalWorkspace() {
     [
       addMessage,
       conversationContext,
+      handleCreateThread,
       messages,
       openContextPanel,
       toggleContextPanel,
+      phase,
       projectInfo,
       proposalSections,
       referenceSources,
