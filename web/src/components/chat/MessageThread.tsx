@@ -92,9 +92,7 @@ export default function MessageThread({ messages, onAction, isLoading }: Message
     (message) => message.type !== "welcome" && message.type !== "file_upload"
   );
   const shouldAutoScrollToBottom = hasSubstantiveHistory || Boolean(isLoading);
-  const visibleMessages = hasSubstantiveHistory
-    ? messages.filter((message) => message.type !== "welcome" && message.type !== "file_upload")
-    : messages;
+  const visibleMessages = messages;
 
   useEffect(() => {
     if (!shouldAutoScrollToBottom) return;

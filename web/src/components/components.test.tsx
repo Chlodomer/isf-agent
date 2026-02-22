@@ -74,6 +74,16 @@ describe("component coverage and failure/security behaviors", () => {
     expect(document.querySelector("script")).toBeNull();
   });
 
+  it("MessageThread keeps welcome actions accessible after conversation starts", () => {
+    const messages: ChatMessage[] = [
+      { id: "w1", type: "welcome", role: "agent" },
+      { id: "m2", type: "text", role: "agent", content: "Next step guidance" },
+    ];
+    render(<MessageThread messages={messages} onAction={vi.fn()} />);
+    expect(screen.getByText(/welcome to granite/i)).toBeInTheDocument();
+    expect(screen.getByText(/next step guidance/i)).toBeInTheDocument();
+  });
+
   it("NextActionBanner dismisses safely", async () => {
     const user = userEvent.setup();
     render(<NextActionBanner text="Complete profile" />);

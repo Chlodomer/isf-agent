@@ -31,6 +31,12 @@ export default function SuggestedActionsBar({ onAction }: SuggestedActionsBarPro
           {action.label}
         </button>
       ))}
+      <button
+        onClick={() => onAction("show-welcome")}
+        className="flex-shrink-0 rounded-full border border-[#d7c5ad] bg-white/90 px-3.5 py-2 text-[15px] text-[#5d4f41] transition-colors hover:bg-[#f8efe3] hover:text-[#473c31]"
+      >
+        Welcome Actions
+      </button>
     </div>
   );
 }
