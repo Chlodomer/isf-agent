@@ -20,9 +20,11 @@ model User {
   emailVerified DateTime?
   image         String?
   passwordHash  String?
-  role          Role      @default(RESEARCHER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  role                   Role      @default(RESEARCHER)
+  chatPersistenceConsent Boolean   @default(false)
+  chatConsentUpdatedAt   DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
   lastLoginAt   DateTime?
   accounts      Account[]
   sessions      Session[]

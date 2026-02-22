@@ -94,10 +94,15 @@ export default function MessageThread({ messages, onAction, isLoading }: Message
   const shouldAutoScrollToBottom = hasSubstantiveHistory || Boolean(isLoading);
   const visibleMessages = messages;
 
+  // Track the last message's content length to auto-scroll during streaming
+  const lastMsg = visibleMessages[visibleMessages.length - 1];
+  const lastContentLength =
+    lastMsg?.type === "text" ? lastMsg.content.length : 0;
+
   useEffect(() => {
     if (!shouldAutoScrollToBottom) return;
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [isLoading, shouldAutoScrollToBottom, visibleMessages.length]);
+  }, [isLoading, shouldAutoScrollToBottom, visibleMessages.length, lastContentLength]);
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto bg-gradient-to-b from-[#fdf9f3] via-[#faf4ec] to-[#f4ecdf] px-4 pb-4 pt-3">
@@ -107,7 +112,15 @@ export default function MessageThread({ messages, onAction, isLoading }: Message
         </div>
       )}
       {visibleMessages.map((msg) => renderMessage(msg, onAction))}
-      {isLoading && <TypingIndicator />}
+      {isLoading &&
+        (() => {
+          const last = visibleMessages[visibleMessages.length - 1];
+          const streamingStarted =
+            last?.type === "text" &&
+            last.role === "agent" &&
+            last.content.length > 0;
+          return !streamingStarted ? <TypingIndicator /> : null;
+        })()}
       <div ref={bottomRef} />
     </div>
   );
