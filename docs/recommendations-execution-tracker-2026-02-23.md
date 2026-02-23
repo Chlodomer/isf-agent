@@ -54,7 +54,7 @@ Acceptance checks:
 - Users can inspect assembled proposal text without relying on long chat output.
 
 ### WS6: Confidence + Auditability (P2)
-- [ ] `WS6.1` Add version history snapshots with restore points.
+- [x] `WS6.1` Add version history snapshots with restore points.
 - [ ] `WS6.2` Add section-level change log (what changed and when).
 - [ ] `WS6.3` Add final preflight checkpoint before export/submission.
 
@@ -70,4 +70,5 @@ Acceptance checks:
 - Implemented central workflow-sync utilities in `web/src/lib/workflow-sync.ts` and added coverage in `web/src/lib/workflow-sync.test.ts`.
 - Updated phase, interview, drafting, readiness, and save timestamp wiring through store + proposal page orchestration.
 - Verified with `npm test` and `npm run lint` in `web/`.
-- Remaining scope is captured under `WS6` and left intentionally open for the next implementation pass.
+- `WS6.1` implemented with a new `History` tab, manual restore-point creation, per-thread snapshot persistence, and restore actions with safety backup snapshot.
+- Remaining scope is captured under `WS6.2` and `WS6.3`.

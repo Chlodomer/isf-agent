@@ -16,6 +16,7 @@ import type {
   InterviewState,
   ValidationState,
   Learnings,
+  VersionSnapshot,
   UIState,
   ChatMessage,
   Phase,
@@ -37,6 +38,7 @@ interface ProposalStore {
   interview: InterviewState;
   validation: ValidationState;
   learnings: Learnings;
+  versionHistory: VersionSnapshot[];
 
   // Chat state
   messages: ChatMessage[];
@@ -76,6 +78,9 @@ interface ProposalStore {
   addWeakness: (weakness: Learnings["weaknesses"][0]) => void;
   addReviewerConcern: (concern: Learnings["reviewerConcerns"][0]) => void;
   addReferenceSources: (sources: ReferenceSource[]) => void;
+  setVersionHistory: (snapshots: VersionSnapshot[]) => void;
+  captureWorkspaceSnapshot: (label?: string, reason?: "manual" | "auto") => VersionSnapshot;
+  restoreWorkspaceSnapshot: (snapshotId: string) => boolean;
 }
 
 const initialSession: Session = {
@@ -188,6 +193,8 @@ const initialLearnings: Learnings = {
   redFlags: [],
 };
 
+const initialVersionHistory: VersionSnapshot[] = [];
+
 const initialUI: UIState = {
   contextPanelOpen: false,
   activeContextTab: "operations",
@@ -203,6 +210,10 @@ function touchSession(session: Session): Session {
   };
 }
 
+function cloneJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
 export const useProposalStore = create<ProposalStore>((set) => ({
   session: initialSession,
   requirements: initialRequirements,
@@ -215,6 +226,7 @@ export const useProposalStore = create<ProposalStore>((set) => ({
   interview: initialInterview,
   validation: initialValidation,
   learnings: initialLearnings,
+  versionHistory: initialVersionHistory,
   messages: [],
   chatPersistenceConsent: null,
   ui: initialUI,
@@ -235,6 +247,7 @@ export const useProposalStore = create<ProposalStore>((set) => ({
       interview: initialInterview,
       validation: initialValidation,
       learnings: initialLearnings,
+      versionHistory: initialVersionHistory,
       ui: {
         ...state.ui,
         activeContextTab: "operations",
@@ -436,4 +449,66 @@ export const useProposalStore = create<ProposalStore>((set) => ({
         session: touchSession(state.session),
       };
     }),
+
+  setVersionHistory: (snapshots) =>
+    set((state) => ({
+      versionHistory: snapshots.slice(0, 30),
+      session: touchSession(state.session),
+    })),
+
+  captureWorkspaceSnapshot: (label = "Restore point", reason = "manual") => {
+    const state = useProposalStore.getState();
+    const snapshot: VersionSnapshot = {
+      id: `snapshot-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      label,
+      reason,
+      createdAt: new Date().toISOString(),
+      phase: state.session.currentPhase,
+      state: {
+        phase: state.session.currentPhase,
+        requirements: cloneJson(state.requirements),
+        researcherInfo: cloneJson(state.researcherInfo),
+        projectInfo: cloneJson(state.projectInfo),
+        resources: cloneJson(state.resources),
+        trackRecord: cloneJson(state.trackRecord),
+        referenceSources: cloneJson(state.referenceSources),
+        proposalSections: cloneJson(state.proposalSections),
+        interview: cloneJson(state.interview),
+        validation: cloneJson(state.validation),
+        learnings: cloneJson(state.learnings),
+      },
+    };
+
+    set((current) => ({
+      versionHistory: [snapshot, ...current.versionHistory].slice(0, 30),
+      session: touchSession(current.session),
+    }));
+
+    return snapshot;
+  },
+
+  restoreWorkspaceSnapshot: (snapshotId) => {
+    const current = useProposalStore.getState();
+    const snapshot = current.versionHistory.find((entry) => entry.id === snapshotId);
+    if (!snapshot) return false;
+
+    set((state) => ({
+      session: {
+        ...touchSession(state.session),
+        currentPhase: snapshot.state.phase,
+      },
+      requirements: cloneJson(snapshot.state.requirements),
+      researcherInfo: cloneJson(snapshot.state.researcherInfo),
+      projectInfo: cloneJson(snapshot.state.projectInfo),
+      resources: cloneJson(snapshot.state.resources),
+      trackRecord: cloneJson(snapshot.state.trackRecord),
+      referenceSources: cloneJson(snapshot.state.referenceSources),
+      proposalSections: cloneJson(snapshot.state.proposalSections),
+      interview: cloneJson(snapshot.state.interview),
+      validation: cloneJson(snapshot.state.validation),
+      learnings: cloneJson(snapshot.state.learnings),
+    }));
+
+    return true;
+  },
 }));

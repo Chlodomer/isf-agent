@@ -326,6 +326,31 @@ export interface Learnings {
   redFlags: RedFlag[];
 }
 
+// --- Version Snapshots ---
+
+export interface SnapshotWorkspaceState {
+  phase: Phase;
+  requirements: Requirements;
+  researcherInfo: ResearcherInfo;
+  projectInfo: ProjectInfo;
+  resources: Resources;
+  trackRecord: TrackRecord;
+  referenceSources: ReferenceSource[];
+  proposalSections: ProposalSections;
+  interview: InterviewState;
+  validation: ValidationState;
+  learnings: Learnings;
+}
+
+export interface VersionSnapshot {
+  id: string;
+  label: string;
+  reason: "manual" | "auto";
+  createdAt: string;
+  phase: Phase;
+  state: SnapshotWorkspaceState;
+}
+
 // --- Chat Messages ---
 
 export type ChallengeIntensity = 1 | 2 | 3;
@@ -410,7 +435,8 @@ export type ContextTab =
   | "learnings"
   | "compliance"
   | "interview"
-  | "readiness";
+  | "readiness"
+  | "history";
 
 export interface UIState {
   contextPanelOpen: boolean;

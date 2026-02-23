@@ -24,6 +24,7 @@ import LearningsPanel from "@/components/context-panel/LearningsPanel";
 import OperationsDashboardPanel from "@/components/context-panel/OperationsDashboardPanel";
 import PanelTabs from "@/components/context-panel/PanelTabs";
 import SubmissionReadinessPanel from "@/components/context-panel/SubmissionReadinessPanel";
+import VersionHistoryPanel from "@/components/context-panel/VersionHistoryPanel";
 import LeftRail from "@/components/left-rail/LeftRail";
 import PhaseItem from "@/components/left-rail/PhaseItem";
 import PhaseStepper from "@/components/left-rail/PhaseStepper";
@@ -268,6 +269,21 @@ describe("component coverage and failure/security behaviors", () => {
     render(<SubmissionReadinessPanel onAction={vi.fn()} />);
     expect(screen.getByText(/submission readiness/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /view blockers/i })).toBeInTheDocument();
+  });
+
+  it("VersionHistoryPanel creates and restores a snapshot", async () => {
+    const user = userEvent.setup();
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const store = useProposalStore.getState();
+    store.setPhase(3);
+    store.captureWorkspaceSnapshot("Checkpoint A", "manual");
+    store.setPhase(5);
+
+    render(<VersionHistoryPanel />);
+    await user.click(screen.getByRole("button", { name: /^restore$/i }));
+    expect(useProposalStore.getState().session.currentPhase).toBe(3);
+
+    confirmSpy.mockRestore();
   });
 
   it("LeftRail renders navigation and quick actions", () => {
