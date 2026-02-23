@@ -159,7 +159,7 @@ export async function POST(request: Request) {
     },
     body: JSON.stringify({
       model,
-      max_tokens: 1024,
+      max_tokens: 4096,
       temperature: 0.4,
       system: systemPrompt,
       messages,

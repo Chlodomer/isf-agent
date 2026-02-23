@@ -74,13 +74,13 @@ export default function DraftReviewBlock({
           Open Full Draft
         </button>
         <button
-          onClick={() => onAction?.("approve")}
+          onClick={() => onAction?.(`approve:${sectionName}`)}
           className="text-sm px-3 py-1.5 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors flex items-center gap-1"
         >
           <Check size={14} /> Approve
         </button>
         <button
-          onClick={() => onAction?.("request-changes")}
+          onClick={() => onAction?.(`request-changes:${sectionName}`)}
           className="text-sm px-3 py-1.5 rounded-md border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors"
         >
           Request Changes

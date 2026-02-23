@@ -62,7 +62,7 @@ export function buildReadinessSnapshot(input: ReadinessInput): ReadinessSnapshot
           ? `${input.referenceSources.length} source file(s) attached for grounded citations.`
           : "Attach at least one paper, prior proposal, or reviewer note.",
       status: input.referenceSources.length > 0 ? "ready" : "blocked",
-      action: "/sources",
+      action: "upload-first",
     },
     {
       id: "draft",

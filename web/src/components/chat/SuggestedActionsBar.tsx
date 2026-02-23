@@ -1,6 +1,7 @@
 "use client";
 
 import { useProposalStore } from "@/lib/store";
+import { SECTION_ORDER } from "@/lib/types";
 import { getSuggestedActions, type SuggestedAction } from "@/lib/chat-actions";
 
 interface SuggestedActionsBarProps {
@@ -9,7 +10,11 @@ interface SuggestedActionsBarProps {
 
 export default function SuggestedActionsBar({ onAction }: SuggestedActionsBarProps) {
   const phase = useProposalStore((s) => s.session.currentPhase);
-  const actions = getSuggestedActions(phase);
+  const proposalSections = useProposalStore((s) => s.proposalSections);
+  const draftReady = SECTION_ORDER.some(
+    (section) => Boolean(proposalSections[section].draft) && !proposalSections[section].approved
+  );
+  const actions = getSuggestedActions(phase, { draftReady });
 
   if (actions.length === 0) return null;
 

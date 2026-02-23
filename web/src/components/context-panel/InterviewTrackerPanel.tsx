@@ -2,10 +2,12 @@
 
 import { Check, Minus, ArrowRight } from "lucide-react";
 import { useProposalStore } from "@/lib/store";
-import { INTERVIEW_SECTIONS } from "@/lib/types";
+import { INTERVIEW_SECTIONS, TOTAL_INTERVIEW_QUESTIONS } from "@/lib/types";
+import { deriveInterviewAnsweredCount } from "@/lib/workflow-sync";
 
 export default function InterviewTrackerPanel() {
   const interview = useProposalStore((s) => s.interview);
+  const totalAnswered = deriveInterviewAnsweredCount(interview);
 
   const hasStarted = interview.currentSection !== null || interview.completedSections.length > 0;
 
@@ -29,6 +31,9 @@ export default function InterviewTrackerPanel() {
         <h3 className="text-xs font-semibold text-gray-700 uppercase">
           Interview Progress
         </h3>
+        <p className="mt-1 text-xs text-gray-500">
+          {totalAnswered}/{TOTAL_INTERVIEW_QUESTIONS} questions answered
+        </p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
