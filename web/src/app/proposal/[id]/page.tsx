@@ -49,6 +49,7 @@ interface PersistedThread {
   updatedAt: string;
   messages: ChatMessage[];
   versionSnapshots?: VersionSnapshot[];
+  archivedAt?: string | null;
 }
 
 function createWelcomeMessage(): ChatMessage {
@@ -625,9 +626,16 @@ export default function ProposalWorkspace() {
 
   const handleDeleteThread = useCallback(
     (threadId: string) => {
+      const archiveTimestamp = new Date().toISOString();
       setThreads((current) => {
-        const remaining = current.filter((thread) => thread.id !== threadId);
-        if (remaining.length === 0) {
+        const updated = current.map((thread) =>
+          thread.id === threadId
+            ? { ...thread, archivedAt: archiveTimestamp }
+            : thread
+        );
+        const activeThreads = updated.filter((t) => !t.archivedAt);
+
+        if (activeThreads.length === 0) {
           const replacement: PersistedThread = {
             id: createThreadId(),
             title: "New thread",
@@ -642,11 +650,11 @@ export default function ProposalWorkspace() {
           setMessages(replacement.messages);
           setVersionHistory([]);
           setDemoLoaded(false);
-          return [replacement];
+          return [replacement, ...updated];
         }
 
         if (activeThreadId === threadId) {
-          const nextActive = remaining[0];
+          const nextActive = activeThreads[0];
           resetWorkspaceForNewThread();
           processedWorkflowMessageIdsRef.current.clear();
           setActiveThreadId(nextActive.id);
@@ -655,11 +663,29 @@ export default function ProposalWorkspace() {
           setDemoLoaded(false);
         }
 
-        return remaining;
+        return updated;
       });
     },
     [activeThreadId, resetWorkspaceForNewThread, setMessages, setVersionHistory]
   );
+
+  const handleRestoreThread = useCallback((threadId: string) => {
+    setThreads((current) =>
+      current.map((thread) =>
+        thread.id === threadId
+          ? { ...thread, archivedAt: null, updatedAt: new Date().toISOString() }
+          : thread
+      )
+    );
+  }, []);
+
+  const handlePermanentDeleteThread = useCallback((threadId: string) => {
+    setThreads((current) => current.filter((thread) => thread.id !== threadId));
+  }, []);
+
+  const handleEmptyTrash = useCallback(() => {
+    setThreads((current) => current.filter((thread) => !thread.archivedAt));
+  }, []);
 
   const handleToggleThreadsCollapsed = useCallback(() => {
     setThreadsCollapsed((current) => !current);
@@ -1165,13 +1191,26 @@ export default function ProposalWorkspace() {
     return <OnboardingExperience onComplete={completeOnboarding} />;
   }
 
-  const threadSummaries: ThreadSummary[] = threads.map((thread) => ({
-    id: thread.id,
-    title: thread.title,
-    updatedAt: thread.updatedAt,
-    messageCount: thread.messages.length,
-    snippet: deriveThreadSnippet(thread.messages),
-  }));
+  const activeThreadSummaries: ThreadSummary[] = threads
+    .filter((thread) => !thread.archivedAt)
+    .map((thread) => ({
+      id: thread.id,
+      title: thread.title,
+      updatedAt: thread.updatedAt,
+      messageCount: thread.messages.length,
+      snippet: deriveThreadSnippet(thread.messages),
+    }));
+
+  const archivedThreadSummaries: ThreadSummary[] = threads
+    .filter((thread) => !!thread.archivedAt)
+    .map((thread) => ({
+      id: thread.id,
+      title: thread.title,
+      updatedAt: thread.updatedAt,
+      messageCount: thread.messages.length,
+      snippet: deriveThreadSnippet(thread.messages),
+      archivedAt: thread.archivedAt,
+    }));
 
   const activeThreadTitle =
     threads.find((thread) => thread.id === activeThreadId)?.title ?? "Current thread";
@@ -1183,7 +1222,8 @@ export default function ProposalWorkspace() {
       <div className="relative z-10 contents">
         <LeftRail onPhaseClick={handlePhaseClick} onAction={handleAction} />
         <ThreadColumn
-          threads={threadSummaries}
+          threads={activeThreadSummaries}
+          archivedThreads={archivedThreadSummaries}
           activeThreadId={activeThreadId}
           collapsed={threadsCollapsed}
           onSelectThread={handleSelectThread}
@@ -1191,6 +1231,9 @@ export default function ProposalWorkspace() {
           onToggleCollapsed={handleToggleThreadsCollapsed}
           onRenameThread={handleRenameThread}
           onDeleteThread={handleDeleteThread}
+          onRestoreThread={handleRestoreThread}
+          onPermanentDelete={handlePermanentDeleteThread}
+          onEmptyTrash={handleEmptyTrash}
         />
         <MainChat
           onAction={handleAction}

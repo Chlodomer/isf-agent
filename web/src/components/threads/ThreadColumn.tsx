@@ -2,14 +2,18 @@
 
 import { useMemo, useState } from "react";
 import {
+  ChevronDown,
+  ChevronRight,
   ChevronsLeft,
   ChevronsRight,
   MessageSquare,
   Pencil,
   Plus,
+  RotateCcw,
   Search,
   Trash2,
 } from "lucide-react";
+import ConfirmDialog from "../shared/ConfirmDialog";
 
 export interface ThreadSummary {
   id: string;
@@ -17,10 +21,12 @@ export interface ThreadSummary {
   updatedAt: string;
   messageCount: number;
   snippet: string;
+  archivedAt?: string | null;
 }
 
 interface ThreadColumnProps {
   threads: ThreadSummary[];
+  archivedThreads: ThreadSummary[];
   activeThreadId: string | null;
   collapsed: boolean;
   onSelectThread: (threadId: string) => void;
@@ -28,6 +34,9 @@ interface ThreadColumnProps {
   onToggleCollapsed: () => void;
   onRenameThread: (threadId: string, title: string) => void;
   onDeleteThread: (threadId: string) => void;
+  onRestoreThread: (threadId: string) => void;
+  onPermanentDelete: (threadId: string) => void;
+  onEmptyTrash: () => void;
 }
 
 function formatUpdatedAt(value: string): string {
@@ -44,6 +53,7 @@ function formatUpdatedAt(value: string): string {
 
 export default function ThreadColumn({
   threads,
+  archivedThreads,
   activeThreadId,
   collapsed,
   onSelectThread,
@@ -51,8 +61,16 @@ export default function ThreadColumn({
   onToggleCollapsed,
   onRenameThread,
   onDeleteThread,
+  onRestoreThread,
+  onPermanentDelete,
+  onEmptyTrash,
 }: ThreadColumnProps) {
   const [query, setQuery] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [permanentDeleteTarget, setPermanentDeleteTarget] = useState<string | null>(null);
+  const [emptyTrashConfirm, setEmptyTrashConfirm] = useState(false);
+  const [trashExpanded, setTrashExpanded] = useState(false);
+
   const filteredThreads = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return threads;
@@ -201,7 +219,7 @@ export default function ThreadColumn({
                     Rename
                   </button>
                   <button
-                    onClick={() => onDeleteThread(thread.id)}
+                    onClick={() => setDeleteTarget(thread.id)}
                     className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-100"
                     aria-label="Delete thread"
                   >
@@ -213,7 +231,105 @@ export default function ThreadColumn({
             );
           })
         )}
+
+        {/* Recently Deleted section */}
+        {archivedThreads.length > 0 && (
+          <div className="mt-3 pt-2 border-t border-slate-200">
+            <button
+              onClick={() => setTrashExpanded((v) => !v)}
+              className="flex items-center gap-1.5 px-1 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400 hover:text-slate-600 w-full"
+            >
+              {trashExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              Recently Deleted ({archivedThreads.length})
+            </button>
+
+            {trashExpanded && (
+              <div className="mt-1 space-y-1.5">
+                {archivedThreads.map((thread) => (
+                  <div
+                    key={thread.id}
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 opacity-70"
+                  >
+                    <p className="text-xs font-medium text-slate-600 line-clamp-1">
+                      {thread.title}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-slate-400">
+                      {thread.messageCount} messages
+                    </p>
+                    <div className="mt-1.5 flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => onRestoreThread(thread.id)}
+                        className="inline-flex items-center gap-1 rounded-md border border-teal-200 bg-teal-50 px-2 py-0.5 text-[10px] font-medium text-teal-700 hover:bg-teal-100"
+                        aria-label="Restore thread"
+                      >
+                        <RotateCcw size={10} />
+                        Restore
+                      </button>
+                      <button
+                        onClick={() => setPermanentDeleteTarget(thread.id)}
+                        className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700 hover:bg-red-100"
+                        aria-label="Permanently delete thread"
+                      >
+                        <Trash2 size={10} />
+                        Delete Forever
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  onClick={() => setEmptyTrashConfirm(true)}
+                  className="w-full rounded-md border border-red-200 bg-red-50 px-2 py-1.5 text-[11px] font-medium text-red-700 hover:bg-red-100"
+                >
+                  Empty Trash
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Confirmation dialog for soft-delete */}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete thread?"
+        message="Are you sure you would like to delete this thread? You can restore it from Recently Deleted."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => {
+          if (deleteTarget) onDeleteThread(deleteTarget);
+          setDeleteTarget(null);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      {/* Confirmation dialog for permanent delete */}
+      <ConfirmDialog
+        open={permanentDeleteTarget !== null}
+        title="Delete forever?"
+        message="This thread will be permanently deleted. This cannot be undone."
+        confirmLabel="Delete Forever"
+        variant="danger"
+        onConfirm={() => {
+          if (permanentDeleteTarget) onPermanentDelete(permanentDeleteTarget);
+          setPermanentDeleteTarget(null);
+        }}
+        onCancel={() => setPermanentDeleteTarget(null)}
+      />
+
+      {/* Confirmation dialog for empty trash */}
+      <ConfirmDialog
+        open={emptyTrashConfirm}
+        title="Empty trash?"
+        message="Permanently delete all archived threads? This cannot be undone."
+        confirmLabel="Empty Trash"
+        variant="danger"
+        onConfirm={() => {
+          onEmptyTrash();
+          setEmptyTrashConfirm(false);
+          setTrashExpanded(false);
+        }}
+        onCancel={() => setEmptyTrashConfirm(false)}
+      />
     </aside>
   );
 }
