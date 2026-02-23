@@ -101,6 +101,7 @@ function createInitialData() {
       reviewerConcerns: [],
       redFlags: [],
     },
+    versionHistory: [],
     messages: [],
     ui: {
       contextPanelOpen: false,

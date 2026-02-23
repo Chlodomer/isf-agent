@@ -16,6 +16,7 @@ import {
   type ChatMessage,
   type Phase,
   type SectionName,
+  type VersionSnapshot,
 } from "@/lib/types";
 import { buildLocalAgentReply } from "@/lib/local-agent";
 import { streamAssistantReply } from "@/lib/chat-backend";
@@ -47,6 +48,7 @@ interface PersistedThread {
   titleOrigin?: ThreadTitleOrigin;
   updatedAt: string;
   messages: ChatMessage[];
+  versionSnapshots?: VersionSnapshot[];
 }
 
 function createWelcomeMessage(): ChatMessage {
@@ -290,6 +292,8 @@ export default function ProposalWorkspace() {
   const interview = useProposalStore((s) => s.interview);
   const learnings = useProposalStore((s) => s.learnings);
   const resetWorkspaceForNewThread = useProposalStore((s) => s.resetWorkspaceForNewThread);
+  const versionHistory = useProposalStore((s) => s.versionHistory);
+  const setVersionHistory = useProposalStore((s) => s.setVersionHistory);
   const referenceSources = useProposalStore((s) => s.referenceSources);
   const messages = useProposalStore((s) => s.messages);
   const [threads, setThreads] = useState<PersistedThread[]>([]);
@@ -360,6 +364,11 @@ export default function ProposalWorkspace() {
                     ? thread.messages
                     : [createWelcomeMessage()];
                 const normalizedTitle = thread.title || "New thread";
+                const normalizedSnapshots = Array.isArray(thread.versionSnapshots)
+                  ? thread.versionSnapshots
+                      .filter((snapshot) => typeof snapshot?.id === "string")
+                      .slice(0, 30)
+                  : [];
                 return {
                   id: thread.id,
                   title: normalizedTitle,
@@ -370,6 +379,7 @@ export default function ProposalWorkspace() {
                   ),
                   updatedAt: thread.updatedAt || new Date().toISOString(),
                   messages: normalizedMessages,
+                  versionSnapshots: normalizedSnapshots,
                 };
               });
           }
@@ -392,6 +402,7 @@ export default function ProposalWorkspace() {
         setThreads(parsedThreads);
         setActiveThreadId(existing.id);
         setMessages(existing.messages);
+        setVersionHistory(existing.versionSnapshots ?? []);
       } else {
         const created: PersistedThread = {
           id: initialThreadId,
@@ -399,6 +410,7 @@ export default function ProposalWorkspace() {
           titleOrigin: "auto",
           updatedAt: new Date().toISOString(),
           messages: [createWelcomeMessage()],
+          versionSnapshots: [],
         };
         const nextThreads = [created, ...parsedThreads];
         resetWorkspaceForNewThread();
@@ -406,13 +418,14 @@ export default function ProposalWorkspace() {
         setThreads(nextThreads);
         setActiveThreadId(created.id);
         setMessages(created.messages);
+        setVersionHistory([]);
       }
 
       setThreadsLoaded(true);
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [onboardingStatus, resetWorkspaceForNewThread, routeThreadId, setMessages]);
+  }, [onboardingStatus, resetWorkspaceForNewThread, routeThreadId, setMessages, setVersionHistory]);
 
   useEffect(() => {
     if (!threadsLoaded || !activeThreadId) return;
@@ -429,6 +442,7 @@ export default function ProposalWorkspace() {
               titleOrigin: "auto",
               updatedAt: nextUpdatedAt,
               messages: messages.length > 0 ? messages : [createWelcomeMessage()],
+              versionSnapshots: versionHistory,
             },
             ...current,
           ];
@@ -442,6 +456,7 @@ export default function ProposalWorkspace() {
           titleOrigin: existing.titleOrigin ?? "auto",
           updatedAt: nextUpdatedAt,
           messages: nextMessages,
+          versionSnapshots: versionHistory,
         };
 
         const withoutCurrent = current.filter((thread) => thread.id !== activeThreadId);
@@ -450,7 +465,7 @@ export default function ProposalWorkspace() {
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [activeThreadId, messages, threadsLoaded]);
+  }, [activeThreadId, messages, threadsLoaded, versionHistory]);
 
   useEffect(() => {
     if (!threadsLoaded) return;
@@ -516,8 +531,9 @@ export default function ProposalWorkspace() {
     resetWorkspaceForNewThread();
     processedWorkflowMessageIdsRef.current.clear();
     setMessages(DEMO_MESSAGES);
+    setVersionHistory([]);
     setDemoLoaded(true);
-  }, [demoLoaded, resetWorkspaceForNewThread, setMessages]);
+  }, [demoLoaded, resetWorkspaceForNewThread, setMessages, setVersionHistory]);
 
   const syncAssistantReplyToWorkspace = useCallback(
     (userPrompt: string, assistantReply: string) => {
@@ -555,9 +571,10 @@ export default function ProposalWorkspace() {
       processedWorkflowMessageIdsRef.current.clear();
       setActiveThreadId(threadId);
       setMessages(selected.messages);
+      setVersionHistory(selected.versionSnapshots ?? []);
       setDemoLoaded(false);
     },
-    [resetWorkspaceForNewThread, setMessages, threads]
+    [resetWorkspaceForNewThread, setMessages, setVersionHistory, threads]
   );
 
   const handleCreateThread = useCallback(() => {
@@ -578,14 +595,16 @@ export default function ProposalWorkspace() {
       titleOrigin: "auto",
       updatedAt: new Date().toISOString(),
       messages: starterMessages,
+      versionSnapshots: [],
     };
     resetWorkspaceForNewThread();
     processedWorkflowMessageIdsRef.current.clear();
     setThreads((current) => [created, ...current]);
     setActiveThreadId(threadId);
     setMessages(starterMessages);
+    setVersionHistory([]);
     setDemoLoaded(false);
-  }, [resetWorkspaceForNewThread, setMessages]);
+  }, [resetWorkspaceForNewThread, setMessages, setVersionHistory]);
 
   const handleRenameThread = useCallback((threadId: string, title: string) => {
     const nextTitle = title.trim();
@@ -615,11 +634,13 @@ export default function ProposalWorkspace() {
             titleOrigin: "auto",
             updatedAt: new Date().toISOString(),
             messages: [createWelcomeMessage()],
+            versionSnapshots: [],
           };
           resetWorkspaceForNewThread();
           processedWorkflowMessageIdsRef.current.clear();
           setActiveThreadId(replacement.id);
           setMessages(replacement.messages);
+          setVersionHistory([]);
           setDemoLoaded(false);
           return [replacement];
         }
@@ -630,13 +651,14 @@ export default function ProposalWorkspace() {
           processedWorkflowMessageIdsRef.current.clear();
           setActiveThreadId(nextActive.id);
           setMessages(nextActive.messages);
+          setVersionHistory(nextActive.versionSnapshots ?? []);
           setDemoLoaded(false);
         }
 
         return remaining;
       });
     },
-    [activeThreadId, resetWorkspaceForNewThread, setMessages]
+    [activeThreadId, resetWorkspaceForNewThread, setMessages, setVersionHistory]
   );
 
   const handleToggleThreadsCollapsed = useCallback(() => {
@@ -767,6 +789,11 @@ export default function ProposalWorkspace() {
 
       if (action === "view-summary") {
         openContextPanel("operations");
+        return;
+      }
+
+      if (action === "history" || action === "/history" || action === "open-history") {
+        openContextPanel("history");
         return;
       }
 

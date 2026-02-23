@@ -9,6 +9,7 @@ import ComplianceDashboardPanel from "./ComplianceDashboardPanel";
 import InterviewTrackerPanel from "./InterviewTrackerPanel";
 import OperationsDashboardPanel from "./OperationsDashboardPanel";
 import SubmissionReadinessPanel from "./SubmissionReadinessPanel";
+import VersionHistoryPanel from "./VersionHistoryPanel";
 
 interface ContextPanelProps {
   onAction?: (action: string) => void;
@@ -34,6 +35,7 @@ export default function ContextPanel({ onAction }: ContextPanelProps) {
       <div className="flex-1 overflow-hidden">
         {activeTab === "operations" && <OperationsDashboardPanel />}
         {activeTab === "readiness" && <SubmissionReadinessPanel onAction={onAction} />}
+        {activeTab === "history" && <VersionHistoryPanel />}
         {activeTab === "draft" && <DraftViewerPanel />}
         {activeTab === "learnings" && <LearningsPanel />}
         {activeTab === "compliance" && <ComplianceDashboardPanel onAction={onAction} />}

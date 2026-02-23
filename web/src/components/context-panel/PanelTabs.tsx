@@ -6,6 +6,7 @@ import type { ContextTab } from "@/lib/types";
 const TABS: { id: ContextTab; label: string }[] = [
   { id: "operations", label: "Operations" },
   { id: "readiness", label: "Readiness" },
+  { id: "history", label: "History" },
   { id: "draft", label: "Draft" },
   { id: "learnings", label: "Learnings" },
   { id: "compliance", label: "Compliance" },
