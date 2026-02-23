@@ -351,6 +351,7 @@ describe("component coverage and failure/security behaviors", () => {
             snippet: "Need stronger justification",
           },
         ]}
+        archivedThreads={[]}
         activeThreadId={null}
         collapsed={false}
         onSelectThread={onSelectThread}
@@ -358,13 +359,23 @@ describe("component coverage and failure/security behaviors", () => {
         onToggleCollapsed={vi.fn()}
         onRenameThread={onRenameThread}
         onDeleteThread={onDeleteThread}
+        onRestoreThread={vi.fn()}
+        onPermanentDelete={vi.fn()}
+        onEmptyTrash={vi.fn()}
       />
     );
 
     await user.type(screen.getByPlaceholderText(/search threads/i), "hypothesis");
     await user.click(screen.getByRole("button", { name: /rename/i }));
-    await user.click(screen.getByRole("button", { name: /delete/i }));
     expect(onRenameThread).toHaveBeenCalledWith("t1", "Renamed");
+
+    // Click delete — should open confirmation dialog, not call handler yet
+    await user.click(screen.getByRole("button", { name: /delete thread/i }));
+    expect(onDeleteThread).not.toHaveBeenCalled();
+    expect(screen.getByText("Delete thread?")).toBeInTheDocument();
+
+    // Confirm the deletion
+    await user.click(screen.getByRole("button", { name: /^Delete$/i }));
     expect(onDeleteThread).toHaveBeenCalledWith("t1");
 
     fireEvent.click(screen.getByRole("button", { name: /hypothesis review/i }));

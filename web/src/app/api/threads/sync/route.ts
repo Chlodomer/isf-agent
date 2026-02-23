@@ -6,6 +6,7 @@ interface SyncThread {
   clientThreadId: string;
   title: string;
   titleOrigin?: string;
+  archivedAt?: string | null;
   messages: Array<{
     role: string;
     type: string;
@@ -93,6 +94,7 @@ export async function POST(request: Request) {
         projectId,
         title: threadData.title || "New thread",
         titleOrigin: threadData.titleOrigin || "auto",
+        archivedAt: threadData.archivedAt ? new Date(threadData.archivedAt) : null,
         messages: {
           create: threadData.messages.map((msg) => ({
             role: msg.role,
