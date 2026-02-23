@@ -18,7 +18,8 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { useProposalStore } from "@/lib/store";
-import { INTERVIEW_SECTIONS, PHASE_LABELS, SECTION_ORDER, type ChatMessage } from "@/lib/types";
+import { PHASE_LABELS, SECTION_ORDER, TOTAL_INTERVIEW_QUESTIONS, type ChatMessage } from "@/lib/types";
+import { deriveInterviewAnsweredCount } from "@/lib/workflow-sync";
 
 interface WorkflowTransparencyDeckProps {
   onAction: (action: string) => void;
@@ -133,24 +134,10 @@ export default function WorkflowTransparencyDeck({ onAction }: WorkflowTranspare
   const messages = useProposalStore((s) => s.messages);
 
   const completedPhases = phase - 1;
-  const phaseProgress = Math.round((completedPhases / 7) * 100);
+  const phaseProgress = Math.round((completedPhases / 6) * 100);
 
-  const totalInterviewQuestions = useMemo(
-    () => INTERVIEW_SECTIONS.reduce((sum, section) => sum + section.totalQuestions, 0),
-    []
-  );
-
-  const answeredInterviewQuestions = INTERVIEW_SECTIONS.reduce((sum, section) => {
-    if (interview.completedSections.includes(section.id)) {
-      return sum + section.totalQuestions;
-    }
-
-    if (interview.currentSection === section.id && interview.currentQuestion) {
-      return sum + Math.max(interview.currentQuestion - 1, 0);
-    }
-
-    return sum;
-  }, 0);
+  const totalInterviewQuestions = useMemo(() => TOTAL_INTERVIEW_QUESTIONS, []);
+  const answeredInterviewQuestions = deriveInterviewAnsweredCount(interview);
 
   const interviewProgress =
     totalInterviewQuestions > 0
@@ -171,8 +158,8 @@ export default function WorkflowTransparencyDeck({ onAction }: WorkflowTranspare
       id: "requirements",
       label: "Requirement extraction",
       detail: requirementsFetched ? "ISF rules loaded" : "Waiting for requirement pull",
-      progress: requirementsFetched ? 100 : phase === 2 ? 55 : phase > 2 ? 100 : 0,
-      state: requirementsFetched ? "complete" : phase === 2 ? "running" : "queued",
+      progress: requirementsFetched ? 100 : phase >= 2 ? 55 : 0,
+      state: requirementsFetched ? "complete" : phase >= 2 ? "running" : "queued",
     },
     {
       id: "learning",

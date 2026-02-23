@@ -203,6 +203,7 @@ export interface SectionDraft {
   draft: string | null;
   approved: boolean;
   wordCount?: number | null;
+  charCount?: number | null;
   pageCount?: number | null;
 }
 
@@ -259,6 +260,11 @@ export const INTERVIEW_SECTIONS = [
   { id: 3, label: "Resources & Timeline", totalQuestions: 5 },
   { id: 4, label: "Track Record", totalQuestions: 4 },
 ] as const;
+
+export const TOTAL_INTERVIEW_QUESTIONS = INTERVIEW_SECTIONS.reduce(
+  (sum, section) => sum + section.totalQuestions,
+  0
+);
 
 // --- Validation ---
 

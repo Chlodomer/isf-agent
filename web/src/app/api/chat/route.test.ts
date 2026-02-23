@@ -62,7 +62,7 @@ describe("POST /api/chat", () => {
     });
   });
 
-  it("returns upstream model response", async () => {
+  it("streams upstream model response", async () => {
     authMock.mockResolvedValue({ user: { id: "user-1" } });
     process.env.ANTHROPIC_API_KEY = "test-key";
 
@@ -70,9 +70,12 @@ describe("POST /api/chat", () => {
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(
         new Response(
-          JSON.stringify({
-            content: [{ type: "text", text: "Short focused reply." }],
-          }),
+          [
+            'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"Short "}}',
+            'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"focused reply."}}',
+            'data: {"type":"message_stop"}',
+            "",
+          ].join("\n"),
           { status: 200 }
         )
       );
@@ -91,7 +94,14 @@ describe("POST /api/chat", () => {
 
     const response = await POST(request);
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ message: "Short focused reply." });
+    const body = await response.text();
+    expect(body).toContain('"token":"Short "');
+    expect(body).toContain('"token":"focused reply."');
+    expect(body).toContain("data: [DONE]");
+    const fetchPayload = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body ?? "{}")) as {
+      max_tokens?: number;
+    };
+    expect(fetchPayload.max_tokens).toBe(4096);
     expect(fetchMock).toHaveBeenCalledOnce();
     fetchMock.mockRestore();
   });

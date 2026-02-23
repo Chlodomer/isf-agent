@@ -150,7 +150,7 @@ describe("component coverage and failure/security behaviors", () => {
       />
     );
     await user.click(screen.getByRole("button", { name: /approve/i }));
-    expect(onAction).toHaveBeenCalledWith("approve");
+    expect(onAction).toHaveBeenCalledWith("approve:abstract");
   });
 
   it("FileUploadCard exposes cloud and local actions", async () => {

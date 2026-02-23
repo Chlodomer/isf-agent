@@ -17,6 +17,7 @@ import WorkflowTransparencyDeck from "./WorkflowTransparencyDeck";
 
 interface MainChatProps {
   onAction: (action: string) => void;
+  onAssistantReply?: (userPrompt: string, assistantReply: string) => void;
   activeThreadTitle?: string;
   activeThreadRecap?: string | null;
   showPersistenceBanner?: boolean;
@@ -26,6 +27,7 @@ interface MainChatProps {
 
 export default function MainChat({
   onAction,
+  onAssistantReply,
   activeThreadTitle = "Current thread",
   activeThreadRecap = null,
   showPersistenceBanner = false,
@@ -101,7 +103,10 @@ export default function MainChat({
       normalized === "/fix" ||
       normalized === "/checklist" ||
       normalized === "/readiness" ||
-      normalized === "/sources"
+      normalized === "/sources" ||
+      normalized === "/approve" ||
+      normalized === "/preview" ||
+      normalized === "/requirements"
     ) {
       onAction(normalized);
       return;
@@ -161,6 +166,9 @@ export default function MainChat({
       () => {
         // Flush any remaining tokens
         updateMessage(assistantMsgId, accumulatedRef.current);
+        if (accumulatedRef.current.trim().length > 0) {
+          onAssistantReply?.(content, accumulatedRef.current);
+        }
         setIsSending(false);
       },
       (error) => {

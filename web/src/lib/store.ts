@@ -1,4 +1,10 @@
 import { create } from "zustand";
+import {
+  advanceInterviewAfterUserResponse,
+  countCharacters,
+  countWords,
+  estimatePagesFromWords,
+} from "./workflow-sync";
 import type {
   Session,
   Requirements,
@@ -42,8 +48,14 @@ interface ProposalStore {
   ui: UIState;
 
   // Actions
+  resetWorkspaceForNewThread: () => void;
   setChatPersistenceConsent: (consent: boolean | null) => void;
   setPhase: (phase: Phase) => void;
+  setRequirementsFetched: (input: {
+    fetched: boolean;
+    sourceUrl?: string | null;
+    fetchDate?: string | null;
+  }) => void;
   setResearcherInfo: (info: Partial<ResearcherInfo>) => void;
   addMessage: (message: ChatMessage) => void;
   setMessages: (messages: ChatMessage[]) => void;
@@ -52,8 +64,11 @@ interface ProposalStore {
   setContextTab: (tab: ContextTab) => void;
   openContextPanel: (tab: ContextTab) => void;
   setLeftRailCollapsed: (collapsed: boolean) => void;
+  setSectionDraft: (section: SectionName, draft: string) => void;
   approveSection: (section: SectionName) => void;
+  setSectionApproval: (section: SectionName, approved: boolean) => void;
   updateInterviewProgress: (section: number, question: number) => void;
+  recordInterviewAnswer: () => void;
   completeInterviewSection: (section: number) => void;
   skipQuestion: (section: number, question: number) => void;
   setValidation: (validation: Partial<ValidationState>) => void;
@@ -140,13 +155,13 @@ const initialTrackRecord: TrackRecord = {
 const emptySection = { draft: null, approved: false };
 
 const initialProposalSections: ProposalSections = {
-  abstract: { ...emptySection, wordCount: null },
-  background: { ...emptySection, pageCount: null },
-  aims: { ...emptySection },
-  methods: { ...emptySection, pageCount: null },
-  innovation: { ...emptySection },
-  budget: { ...emptySection },
-  risks: { ...emptySection },
+  abstract: { ...emptySection, wordCount: null, charCount: null, pageCount: null },
+  background: { ...emptySection, wordCount: null, charCount: null, pageCount: null },
+  aims: { ...emptySection, wordCount: null, charCount: null, pageCount: null },
+  methods: { ...emptySection, wordCount: null, charCount: null, pageCount: null },
+  innovation: { ...emptySection, wordCount: null, charCount: null, pageCount: null },
+  budget: { ...emptySection, wordCount: null, charCount: null, pageCount: null },
+  risks: { ...emptySection, wordCount: null, charCount: null, pageCount: null },
   bibliography: { entries: [] },
 };
 
@@ -179,6 +194,15 @@ const initialUI: UIState = {
   leftRailCollapsed: false,
 };
 
+function touchSession(session: Session): Session {
+  const now = new Date().toISOString();
+  return {
+    ...session,
+    started: session.started ?? now,
+    lastUpdated: now,
+  };
+}
+
 export const useProposalStore = create<ProposalStore>((set) => ({
   session: initialSession,
   requirements: initialRequirements,
@@ -195,16 +219,48 @@ export const useProposalStore = create<ProposalStore>((set) => ({
   chatPersistenceConsent: null,
   ui: initialUI,
 
+  resetWorkspaceForNewThread: () =>
+    set((state) => ({
+      session: {
+        ...initialSession,
+        started: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
+      },
+      requirements: initialRequirements,
+      projectInfo: initialProjectInfo,
+      resources: initialResources,
+      trackRecord: initialTrackRecord,
+      referenceSources: [],
+      proposalSections: initialProposalSections,
+      interview: initialInterview,
+      validation: initialValidation,
+      learnings: initialLearnings,
+      ui: {
+        ...state.ui,
+        activeContextTab: "operations",
+      },
+    })),
+
   setChatPersistenceConsent: (consent) =>
-    set(() => ({ chatPersistenceConsent: consent })),
+    set((state) => ({
+      chatPersistenceConsent: consent,
+      session: touchSession(state.session),
+    })),
 
   setPhase: (phase) =>
     set((state) => ({
-      session: {
-        ...state.session,
-        currentPhase: phase,
-        lastUpdated: new Date().toISOString(),
+      session: { ...touchSession(state.session), currentPhase: phase },
+    })),
+
+  setRequirementsFetched: (input) =>
+    set((state) => ({
+      requirements: {
+        ...state.requirements,
+        fetched: input.fetched,
+        sourceUrl: input.sourceUrl ?? state.requirements.sourceUrl,
+        fetchDate: input.fetchDate ?? (input.fetched ? new Date().toISOString() : state.requirements.fetchDate),
       },
+      session: touchSession(state.session),
     })),
 
   setResearcherInfo: (info) =>
@@ -213,16 +269,19 @@ export const useProposalStore = create<ProposalStore>((set) => ({
         ...state.researcherInfo,
         ...info,
       },
+      session: touchSession(state.session),
     })),
 
   addMessage: (message) =>
     set((state) => ({
       messages: [...state.messages, message],
+      session: touchSession(state.session),
     })),
 
   setMessages: (messages) =>
-    set(() => ({
+    set((state) => ({
       messages,
+      session: touchSession(state.session),
     })),
 
   updateMessage: (id, content) =>
@@ -232,6 +291,7 @@ export const useProposalStore = create<ProposalStore>((set) => ({
           ? { ...msg, content }
           : msg
       ),
+      session: touchSession(state.session),
     })),
 
   toggleContextPanel: () =>
@@ -254,12 +314,42 @@ export const useProposalStore = create<ProposalStore>((set) => ({
       ui: { ...state.ui, leftRailCollapsed: collapsed },
     })),
 
+  setSectionDraft: (section, draft) =>
+    set((state) => {
+      const trimmed = draft.trim();
+      const wordCount = countWords(trimmed);
+      return {
+        proposalSections: {
+          ...state.proposalSections,
+          [section]: {
+            ...state.proposalSections[section],
+            draft: trimmed,
+            wordCount,
+            charCount: countCharacters(trimmed),
+            pageCount: estimatePagesFromWords(wordCount),
+            approved: false,
+          },
+        },
+        session: touchSession(state.session),
+      };
+    }),
+
   approveSection: (section) =>
     set((state) => ({
       proposalSections: {
         ...state.proposalSections,
         [section]: { ...state.proposalSections[section], approved: true },
       },
+      session: touchSession(state.session),
+    })),
+
+  setSectionApproval: (section, approved) =>
+    set((state) => ({
+      proposalSections: {
+        ...state.proposalSections,
+        [section]: { ...state.proposalSections[section], approved },
+      },
+      session: touchSession(state.session),
     })),
 
   updateInterviewProgress: (section, question) =>
@@ -269,6 +359,13 @@ export const useProposalStore = create<ProposalStore>((set) => ({
         currentSection: section,
         currentQuestion: question,
       },
+      session: touchSession(state.session),
+    })),
+
+  recordInterviewAnswer: () =>
+    set((state) => ({
+      interview: advanceInterviewAfterUserResponse(state.interview),
+      session: touchSession(state.session),
     })),
 
   completeInterviewSection: (section) =>
@@ -279,6 +376,7 @@ export const useProposalStore = create<ProposalStore>((set) => ({
           ? state.interview.completedSections
           : [...state.interview.completedSections, section],
       },
+      session: touchSession(state.session),
     })),
 
   skipQuestion: (section, question) =>
@@ -290,11 +388,13 @@ export const useProposalStore = create<ProposalStore>((set) => ({
           { section, question },
         ],
       },
+      session: touchSession(state.session),
     })),
 
   setValidation: (validation) =>
     set((state) => ({
       validation: { ...state.validation, ...validation },
+      session: touchSession(state.session),
     })),
 
   addLearningPattern: (pattern) =>
@@ -303,6 +403,7 @@ export const useProposalStore = create<ProposalStore>((set) => ({
         ...state.learnings,
         successfulPatterns: [...state.learnings.successfulPatterns, pattern],
       },
+      session: touchSession(state.session),
     })),
 
   addWeakness: (weakness) =>
@@ -311,6 +412,7 @@ export const useProposalStore = create<ProposalStore>((set) => ({
         ...state.learnings,
         weaknesses: [...state.learnings.weaknesses, weakness],
       },
+      session: touchSession(state.session),
     })),
 
   addReviewerConcern: (concern) =>
@@ -319,6 +421,7 @@ export const useProposalStore = create<ProposalStore>((set) => ({
         ...state.learnings,
         reviewerConcerns: [...state.learnings.reviewerConcerns, concern],
       },
+      session: touchSession(state.session),
     })),
 
   addReferenceSources: (sources) =>
@@ -330,6 +433,7 @@ export const useProposalStore = create<ProposalStore>((set) => ({
       }
       return {
         referenceSources: [...state.referenceSources, ...uniqueSources],
+        session: touchSession(state.session),
       };
     }),
 }));

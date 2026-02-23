@@ -13,7 +13,8 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { useProposalStore } from "@/lib/store";
-import { INTERVIEW_SECTIONS, PHASE_LABELS, SECTION_ORDER } from "@/lib/types";
+import { PHASE_LABELS, SECTION_ORDER, TOTAL_INTERVIEW_QUESTIONS } from "@/lib/types";
+import { deriveInterviewAnsweredCount } from "@/lib/workflow-sync";
 
 type StatusTone = "done" | "running" | "waiting" | "attention";
 
@@ -53,20 +54,10 @@ export default function OperationsDashboardPanel() {
   const toggleContextPanel = useProposalStore((s) => s.toggleContextPanel);
 
   const completedPhases = phase - 1;
-  const phasePercent = Math.round((completedPhases / 7) * 100);
+  const phasePercent = Math.round((completedPhases / 6) * 100);
 
-  const totalInterview = INTERVIEW_SECTIONS.reduce((sum, section) => sum + section.totalQuestions, 0);
-  const answeredInterview = INTERVIEW_SECTIONS.reduce((sum, section) => {
-    if (interview.completedSections.includes(section.id)) {
-      return sum + section.totalQuestions;
-    }
-
-    if (interview.currentSection === section.id && interview.currentQuestion) {
-      return sum + Math.max(interview.currentQuestion - 1, 0);
-    }
-
-    return sum;
-  }, 0);
+  const totalInterview = TOTAL_INTERVIEW_QUESTIONS;
+  const answeredInterview = deriveInterviewAnsweredCount(interview);
   const interviewPercent = totalInterview > 0 ? Math.round((answeredInterview / totalInterview) * 100) : 0;
 
   const draftedCount = SECTION_ORDER.filter((sectionKey) => sections[sectionKey].draft !== null).length;
@@ -77,7 +68,7 @@ export default function OperationsDashboardPanel() {
       id: "req",
       label: "ISF requirement extraction",
       detail: requirementsFetched ? "Rules loaded" : "Waiting for requirement pull",
-      tone: (requirementsFetched ? "done" : phase === 2 ? "running" : "waiting") as StatusTone,
+      tone: (requirementsFetched ? "done" : phase >= 2 ? "running" : "waiting") as StatusTone,
     },
     {
       id: "interview",

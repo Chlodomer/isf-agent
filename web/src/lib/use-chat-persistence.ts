@@ -40,18 +40,14 @@ export function useChatPersistence(
   const messages = useProposalStore((s) => s.messages);
   const savedCountRef = useRef(0);
   const prevThreadIdRef = useRef<string | null>(null);
-  const [bannerDismissed, setBannerDismissed] = useState(true); // default true to avoid flash
-
-  // Load banner dismissed state on mount
-  useEffect(() => {
+  const [bannerDismissed, setBannerDismissed] = useState(() => {
+    if (typeof window === "undefined") return true;
     try {
-      const dismissed =
-        window.localStorage.getItem(BANNER_DISMISSED_KEY) === "true";
-      setBannerDismissed(dismissed);
+      return window.localStorage.getItem(BANNER_DISMISSED_KEY) === "true";
     } catch {
-      setBannerDismissed(false);
+      return false;
     }
-  }, []);
+  });
 
   // Reset saved count when thread changes
   useEffect(() => {

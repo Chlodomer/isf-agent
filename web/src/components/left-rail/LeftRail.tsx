@@ -16,7 +16,7 @@ interface LeftRailProps {
 export default function LeftRail({ onPhaseClick, onAction }: LeftRailProps) {
   const title = useProposalStore((s) => s.projectInfo.title);
   const phase = useProposalStore((s) => s.session.currentPhase);
-  const completionPercent = Math.round(((phase - 1) / 7) * 100);
+  const completionPercent = Math.round(((phase - 1) / 6) * 100);
 
   return (
     <aside className="w-full lg:w-[17rem] xl:w-[18rem] max-h-[38vh] lg:max-h-none flex-shrink-0 bg-gradient-to-b from-white/92 via-[#f8f3ec]/88 to-[#f3ece2]/88 border border-[#ddcfbd] rounded-2xl shadow-[0_20px_46px_-34px_rgba(47,41,36,0.5)] flex flex-col h-auto lg:h-full overflow-hidden">

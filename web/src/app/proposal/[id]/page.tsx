@@ -9,13 +9,26 @@ import ContextPanel from "@/components/context-panel/ContextPanel";
 import ThreadColumn, { type ThreadSummary } from "@/components/threads/ThreadColumn";
 import OnboardingExperience from "@/components/onboarding/OnboardingExperience";
 import type { OnboardingProfile } from "@/components/onboarding/OnboardingExperience";
-import type { ChatMessage, Phase } from "@/lib/types";
+import {
+  SECTION_ORDER,
+  SECTION_LABELS,
+  TOTAL_INTERVIEW_QUESTIONS,
+  type ChatMessage,
+  type Phase,
+  type SectionName,
+} from "@/lib/types";
 import { buildLocalAgentReply } from "@/lib/local-agent";
 import { streamAssistantReply } from "@/lib/chat-backend";
 import { runComplianceValidation } from "@/lib/compliance";
 import { buildReadinessSnapshot } from "@/lib/readiness";
 import { useChatPersistence } from "@/lib/use-chat-persistence";
-import ChatPersistenceBanner from "@/components/chat/ChatPersistenceBanner";
+import {
+  deriveInterviewAnsweredCount,
+  derivePhaseFromMilestones,
+  extractSectionDraftsFromAssistantReply,
+  getNextApprovableSection,
+  phaseToContextTab,
+} from "@/lib/workflow-sync";
 import ChatSettingsModal from "@/components/settings/ChatSettingsModal";
 import { Eye } from "lucide-react";
 import { useParams } from "next/navigation";
@@ -255,6 +268,8 @@ export default function ProposalWorkspace() {
   const phase = useProposalStore((s) => s.session.currentPhase);
   const contextPanelOpen = useProposalStore((s) => s.ui.contextPanelOpen);
   const activeContextTab = useProposalStore((s) => s.ui.activeContextTab);
+  const setPhase = useProposalStore((s) => s.setPhase);
+  const setRequirementsFetched = useProposalStore((s) => s.setRequirementsFetched);
   const addMessage = useProposalStore((s) => s.addMessage);
   const setMessages = useProposalStore((s) => s.setMessages);
   const updateMessage = useProposalStore((s) => s.updateMessage);
@@ -268,6 +283,13 @@ export default function ProposalWorkspace() {
   const resources = useProposalStore((s) => s.resources);
   const validation = useProposalStore((s) => s.validation);
   const setValidation = useProposalStore((s) => s.setValidation);
+  const setSectionDraft = useProposalStore((s) => s.setSectionDraft);
+  const setSectionApproval = useProposalStore((s) => s.setSectionApproval);
+  const recordInterviewAnswer = useProposalStore((s) => s.recordInterviewAnswer);
+  const updateInterviewProgress = useProposalStore((s) => s.updateInterviewProgress);
+  const interview = useProposalStore((s) => s.interview);
+  const learnings = useProposalStore((s) => s.learnings);
+  const resetWorkspaceForNewThread = useProposalStore((s) => s.resetWorkspaceForNewThread);
   const referenceSources = useProposalStore((s) => s.referenceSources);
   const messages = useProposalStore((s) => s.messages);
   const [threads, setThreads] = useState<PersistedThread[]>([]);
@@ -276,8 +298,13 @@ export default function ProposalWorkspace() {
   const [threadsLoaded, setThreadsLoaded] = useState(false);
   const [demoLoaded, setDemoLoaded] = useState(false);
   const actionStreamRef = useRef("");
+  const processedWorkflowMessageIdsRef = useRef<Set<string>>(new Set());
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus>("checking");
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    processedWorkflowMessageIdsRef.current.clear();
+  }, [activeThreadId]);
 
   // Resolve onboarding status from localStorage on mount
   useEffect(() => {
@@ -360,6 +387,8 @@ export default function ProposalWorkspace() {
       setThreadsCollapsed(persistedCollapsed);
 
       if (existing) {
+        resetWorkspaceForNewThread();
+        processedWorkflowMessageIdsRef.current.clear();
         setThreads(parsedThreads);
         setActiveThreadId(existing.id);
         setMessages(existing.messages);
@@ -372,6 +401,8 @@ export default function ProposalWorkspace() {
           messages: [createWelcomeMessage()],
         };
         const nextThreads = [created, ...parsedThreads];
+        resetWorkspaceForNewThread();
+        processedWorkflowMessageIdsRef.current.clear();
         setThreads(nextThreads);
         setActiveThreadId(created.id);
         setMessages(created.messages);
@@ -381,7 +412,7 @@ export default function ProposalWorkspace() {
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [onboardingStatus, routeThreadId, setMessages]);
+  }, [onboardingStatus, resetWorkspaceForNewThread, routeThreadId, setMessages]);
 
   useEffect(() => {
     if (!threadsLoaded || !activeThreadId) return;
@@ -482,42 +513,79 @@ export default function ProposalWorkspace() {
 
   const loadDemo = useCallback(() => {
     if (demoLoaded) return;
+    resetWorkspaceForNewThread();
+    processedWorkflowMessageIdsRef.current.clear();
     setMessages(DEMO_MESSAGES);
     setDemoLoaded(true);
-  }, [demoLoaded, setMessages]);
+  }, [demoLoaded, resetWorkspaceForNewThread, setMessages]);
+
+  const syncAssistantReplyToWorkspace = useCallback(
+    (userPrompt: string, assistantReply: string) => {
+      const updates = extractSectionDraftsFromAssistantReply(assistantReply, userPrompt);
+      for (const update of updates) {
+        setSectionDraft(update.section, update.draft);
+      }
+    },
+    [setSectionDraft]
+  );
 
   const handlePhaseClick = useCallback(
-    (phase: Phase) => {
-      console.log("Phase clicked:", phase);
+    (nextPhase: Phase) => {
+      if (nextPhase !== phase) {
+        addMessage({
+          id: `phase-transition-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          type: "phase_transition",
+          role: "agent",
+          fromPhase: phase,
+          toPhase: nextPhase,
+          summary: `Moved to Phase ${nextPhase}.`,
+        });
+      }
+      setPhase(nextPhase);
+      openContextPanel(phaseToContextTab(nextPhase));
     },
-    []
+    [addMessage, openContextPanel, phase, setPhase]
   );
 
   const handleSelectThread = useCallback(
     (threadId: string) => {
       const selected = threads.find((thread) => thread.id === threadId);
       if (!selected) return;
+      resetWorkspaceForNewThread();
+      processedWorkflowMessageIdsRef.current.clear();
       setActiveThreadId(threadId);
       setMessages(selected.messages);
       setDemoLoaded(false);
     },
-    [setMessages, threads]
+    [resetWorkspaceForNewThread, setMessages, threads]
   );
 
   const handleCreateThread = useCallback(() => {
     const threadId = createThreadId();
+    const starterMessages: ChatMessage[] = [
+      createWelcomeMessage(),
+      {
+        id: `fresh-start-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+        type: "text",
+        role: "agent",
+        content:
+          "Started a fresh proposal workspace. Share your project summary to begin the interview flow.",
+      },
+    ];
     const created: PersistedThread = {
       id: threadId,
       title: "New thread",
       titleOrigin: "auto",
       updatedAt: new Date().toISOString(),
-      messages: [createWelcomeMessage()],
+      messages: starterMessages,
     };
+    resetWorkspaceForNewThread();
+    processedWorkflowMessageIdsRef.current.clear();
     setThreads((current) => [created, ...current]);
     setActiveThreadId(threadId);
-    setMessages(created.messages);
+    setMessages(starterMessages);
     setDemoLoaded(false);
-  }, [setMessages]);
+  }, [resetWorkspaceForNewThread, setMessages]);
 
   const handleRenameThread = useCallback((threadId: string, title: string) => {
     const nextTitle = title.trim();
@@ -548,6 +616,8 @@ export default function ProposalWorkspace() {
             updatedAt: new Date().toISOString(),
             messages: [createWelcomeMessage()],
           };
+          resetWorkspaceForNewThread();
+          processedWorkflowMessageIdsRef.current.clear();
           setActiveThreadId(replacement.id);
           setMessages(replacement.messages);
           setDemoLoaded(false);
@@ -556,6 +626,8 @@ export default function ProposalWorkspace() {
 
         if (activeThreadId === threadId) {
           const nextActive = remaining[0];
+          resetWorkspaceForNewThread();
+          processedWorkflowMessageIdsRef.current.clear();
           setActiveThreadId(nextActive.id);
           setMessages(nextActive.messages);
           setDemoLoaded(false);
@@ -564,7 +636,7 @@ export default function ProposalWorkspace() {
         return remaining;
       });
     },
-    [activeThreadId, setMessages]
+    [activeThreadId, resetWorkspaceForNewThread, setMessages]
   );
 
   const handleToggleThreadsCollapsed = useCallback(() => {
@@ -611,8 +683,155 @@ export default function ProposalWorkspace() {
     [referenceSources, researcherInfo.department, researcherInfo.name]
   );
 
+  useEffect(() => {
+    for (const message of messages) {
+      if (processedWorkflowMessageIdsRef.current.has(message.id)) continue;
+      processedWorkflowMessageIdsRef.current.add(message.id);
+
+      if (message.type === "phase_transition") {
+        setPhase(message.toPhase);
+        continue;
+      }
+
+      if (message.type === "interview_question") {
+        updateInterviewProgress(message.section, message.questionNum);
+        continue;
+      }
+
+      if (message.type === "draft_review") {
+        setSectionDraft(message.sectionName, message.content);
+        continue;
+      }
+
+      if (message.type !== "text" || message.role !== "user") continue;
+      const trimmed = message.content.trim();
+      if (!trimmed || trimmed.startsWith("/")) continue;
+
+      if (!requirements.fetched) {
+        setRequirementsFetched({
+          fetched: true,
+          sourceUrl: "conversation://inferred",
+          fetchDate: new Date().toISOString(),
+        });
+      }
+
+      if (
+        deriveInterviewAnsweredCount(interview) < TOTAL_INTERVIEW_QUESTIONS &&
+        SECTION_ORDER.every((section) => !proposalSections[section].draft)
+      ) {
+        recordInterviewAnswer();
+      }
+    }
+  }, [
+    interview,
+    messages,
+    proposalSections,
+    recordInterviewAnswer,
+    requirements.fetched,
+    setPhase,
+    setRequirementsFetched,
+    setSectionDraft,
+    updateInterviewProgress,
+  ]);
+
+  useEffect(() => {
+    const learningsCount =
+      learnings.successfulPatterns.length +
+      learnings.weaknesses.length +
+      learnings.reviewerConcerns.length;
+    const draftedCount = SECTION_ORDER.filter((section) => proposalSections[section].draft).length;
+    const interviewAnswered = deriveInterviewAnsweredCount(interview);
+    const recommendedPhase = derivePhaseFromMilestones({
+      requirementsFetched: requirements.fetched,
+      learningsCount,
+      interviewAnswered,
+      draftedCount,
+      validationRun: Boolean(validation.lastRun),
+      readyForSubmission: validation.readyForSubmission,
+    });
+
+    if (recommendedPhase > phase) {
+      setPhase(recommendedPhase);
+    }
+  }, [interview, learnings, phase, proposalSections, requirements.fetched, setPhase, validation]);
+
   const handleAction = useCallback(
     (action: string) => {
+      if (action.startsWith("go-phase:")) {
+        const maybePhase = Number(action.replace("go-phase:", ""));
+        if (Number.isInteger(maybePhase) && maybePhase >= 1 && maybePhase <= 7) {
+          handlePhaseClick(maybePhase as Phase);
+        }
+        return;
+      }
+
+      if (action === "view-summary") {
+        openContextPanel("operations");
+        return;
+      }
+
+      if (action === "/approve" || action === "approve") {
+        const nextSection = getNextApprovableSection(proposalSections);
+        if (!nextSection) {
+          addMessage({
+            id: `approve-none-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+            type: "text",
+            role: "agent",
+            content:
+              "No draft section is awaiting approval right now. Open /preview to review drafted content.",
+          });
+          openContextPanel("draft");
+          return;
+        }
+        setSectionApproval(nextSection, true);
+        addMessage({
+          id: `approve-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          type: "text",
+          role: "agent",
+          content: `${SECTION_LABELS[nextSection]} marked as approved.`,
+        });
+        openContextPanel("draft");
+        return;
+      }
+
+      if (action.startsWith("approve:")) {
+        const section = action.replace("approve:", "") as SectionName;
+        if (SECTION_ORDER.includes(section)) {
+          setSectionApproval(section, true);
+          addMessage({
+            id: `approve-section-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+            type: "text",
+            role: "agent",
+            content: `${SECTION_LABELS[section]} marked as approved.`,
+          });
+        }
+        return;
+      }
+
+      if (action.startsWith("request-changes:")) {
+        const section = action.replace("request-changes:", "") as SectionName;
+        if (SECTION_ORDER.includes(section)) {
+          setSectionApproval(section, false);
+          openContextPanel("draft");
+          addMessage({
+            id: `changes-section-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+            type: "text",
+            role: "agent",
+            content: `Marked ${SECTION_LABELS[section]} for revision. Tell me what to change and I will regenerate it.`,
+          });
+        }
+        return;
+      }
+
+      if (action === "request-changes") {
+        const section = getNextApprovableSection(proposalSections);
+        if (section) {
+          setSectionApproval(section, false);
+          openContextPanel("draft");
+        }
+        return;
+      }
+
       if (action === "open-settings") {
         setSettingsOpen(true);
         return;
@@ -642,6 +861,20 @@ export default function ProposalWorkspace() {
         });
       } else if (action === "onboarding" || action === "/onboarding" || action === "replay-onboarding") {
         replayOnboarding();
+      } else if (action === "/requirements" || action === "requirements" || action === "view-requirements") {
+        setRequirementsFetched({
+          fetched: true,
+          sourceUrl: "conversation://manual-requirements",
+          fetchDate: new Date().toISOString(),
+        });
+        addMessage({
+          id: `requirements-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          type: "text",
+          role: "agent",
+          content:
+            "Requirements workspace initialized. You can now proceed with interview and drafting while validation tracks compliance blockers.",
+        });
+        openContextPanel("operations");
       } else if (
         action === "view-learnings" ||
         action === "show-learnings" ||
@@ -852,6 +1085,9 @@ export default function ProposalWorkspace() {
           },
           () => {
             updateMessage(assistantMsgId, actionStreamRef.current);
+            if (actionStreamRef.current.trim().length > 0) {
+              syncAssistantReplyToWorkspace(content, actionStreamRef.current);
+            }
           },
           (error) => {
             if (actionStreamRef.current.length === 0) {
@@ -865,10 +1101,12 @@ export default function ProposalWorkspace() {
       addMessage,
       conversationContext,
       handleCreateThread,
+      handlePhaseClick,
       messages,
       openContextPanel,
       toggleContextPanel,
       updateMessage,
+      syncAssistantReplyToWorkspace,
       phase,
       projectInfo,
       proposalSections,
@@ -883,6 +1121,8 @@ export default function ProposalWorkspace() {
       contextPanelOpen,
       threads,
       validation,
+      setRequirementsFetched,
+      setSectionApproval,
     ]
   );
 
@@ -927,6 +1167,7 @@ export default function ProposalWorkspace() {
         />
         <MainChat
           onAction={handleAction}
+          onAssistantReply={syncAssistantReplyToWorkspace}
           activeThreadTitle={activeThreadTitle}
           activeThreadRecap={activeThreadRecap}
           showPersistenceBanner={showBanner}
