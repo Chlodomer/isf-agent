@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { Sparkles } from "lucide-react";
+import { useEffect, useMemo, useRef } from "react";
 import type { ChatMessage } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
 import ChallengeCard from "./messages/ChallengeCard";
@@ -88,11 +89,18 @@ function renderMessage(message: ChatMessage, onAction: (action: string) => void)
 
 export default function MessageThread({ messages, onAction, isLoading }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const hiddenWelcomeMessages = useMemo(
+    () => messages.filter((message) => message.type === "welcome"),
+    [messages]
+  );
   const hasSubstantiveHistory = messages.some(
     (message) => message.type !== "welcome" && message.type !== "file_upload"
   );
+
   const shouldAutoScrollToBottom = hasSubstantiveHistory || Boolean(isLoading);
-  const visibleMessages = messages;
+  const visibleMessages = hasSubstantiveHistory
+    ? messages.filter((message) => message.type !== "welcome")
+    : messages;
 
   // Track the last message's content length to auto-scroll during streaming
   const lastMsg = visibleMessages[visibleMessages.length - 1];
@@ -105,7 +113,18 @@ export default function MessageThread({ messages, onAction, isLoading }: Message
   }, [isLoading, shouldAutoScrollToBottom, visibleMessages.length, lastContentLength]);
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto bg-gradient-to-b from-[#fdf9f3] via-[#faf4ec] to-[#f4ecdf] px-4 pb-4 pt-3">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-gradient-to-b from-[#fdf9f3] via-[#faf4ec] to-[#f4ecdf] px-4 pb-4 pt-2">
+      {hasSubstantiveHistory && hiddenWelcomeMessages.length > 0 && (
+        <details className="group mb-2">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-[#d8c7b0] bg-white/90 px-3 py-1 text-xs font-medium text-[#5f5244] transition-colors hover:bg-[#f8efe3] [&::-webkit-details-marker]:hidden">
+            <Sparkles size={12} />
+            Show quick-start actions
+          </summary>
+          <div className="mt-2 space-y-2">
+            {hiddenWelcomeMessages.map((message) => renderMessage(message, onAction))}
+          </div>
+        </details>
+      )}
       {visibleMessages.length === 0 && (
         <div className="flex h-full items-center justify-center text-base text-[#766554]">
           Starting your grant writing session...

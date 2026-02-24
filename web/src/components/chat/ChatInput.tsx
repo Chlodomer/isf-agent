@@ -107,7 +107,7 @@ export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputP
         </button>
       </div>
 
-      <div className="px-4 pb-3 text-sm text-[#756451]">
+      <div className="px-4 pb-2 text-xs text-[#756451]">
         No special commands required. Just describe what you need.
       </div>
     </div>

@@ -14,8 +14,8 @@ export default function NextActionBanner({ text, onContinue }: NextActionBannerP
   if (dismissed || !text) return null;
 
   return (
-    <div className="flex items-center gap-3 border-b border-[#dccdb9] bg-gradient-to-r from-[#f9f0e2] via-[#f5ebdf] to-[#eee6dc] px-4 py-3">
-      <span className="flex-1 text-base text-[#5f4d3d]">
+    <div className="flex items-center gap-2 border-b border-[#dccdb9] bg-gradient-to-r from-[#f9f0e2] via-[#f5ebdf] to-[#eee6dc] px-4 py-2">
+      <span className="flex-1 text-sm text-[#5f4d3d]">
         <span className="font-medium">Next:</span> {text}
       </span>
       {onContinue && (

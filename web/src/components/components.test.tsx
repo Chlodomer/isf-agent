@@ -81,7 +81,8 @@ describe("component coverage and failure/security behaviors", () => {
       { id: "m2", type: "text", role: "agent", content: "Next step guidance" },
     ];
     render(<MessageThread messages={messages} onAction={vi.fn()} />);
-    expect(screen.getByText(/welcome to granite/i)).toBeInTheDocument();
+    expect(screen.getByText(/welcome to granite/i)).not.toBeVisible();
+    expect(screen.getByText(/show quick-start actions/i)).toBeInTheDocument();
     expect(screen.getByText(/next step guidance/i)).toBeInTheDocument();
   });
 

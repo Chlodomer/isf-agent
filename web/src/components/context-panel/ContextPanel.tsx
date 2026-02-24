@@ -20,7 +20,7 @@ export default function ContextPanel({ onAction }: ContextPanelProps) {
   const toggleContextPanel = useProposalStore((s) => s.toggleContextPanel);
 
   return (
-    <aside className="w-full max-h-[48vh] lg:max-h-none lg:w-[380px] flex-shrink-0 bg-white/95 backdrop-blur-sm border-t lg:border-t-0 lg:border-l border-slate-200 shadow-[0_-12px_30px_-20px_rgba(0,0,0,0.35)] lg:shadow-lg flex flex-col h-full">
+    <aside className="w-full max-h-[44vh] lg:max-h-none lg:w-[340px] xl:w-[360px] flex-shrink-0 bg-white/95 backdrop-blur-sm border-t lg:border-t-0 lg:border-l border-slate-200 shadow-[0_-12px_30px_-20px_rgba(0,0,0,0.35)] lg:shadow-lg flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100">
         <PanelTabs />
         <button
