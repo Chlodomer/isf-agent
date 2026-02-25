@@ -31,6 +31,9 @@ interface AnthropicStreamEvent {
   error?: { message?: string };
 }
 
+const RETRYABLE_UPSTREAM_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504, 529]);
+const OVERLOAD_ERROR_PATTERN = /\b(overloaded|rate limit|too many requests|temporar(?:ily)? unavailable|capacity)\b/i;
+
 const SYSTEM_PROMPT = [
   "You are an expert assistant for ISF grant preparation.",
   "Respond in plain text only. Do not use Markdown symbols such as *, _, #, or backticks.",
@@ -49,6 +52,126 @@ const SYSTEM_PROMPT = [
   "If the user needs options, provide at most 3 focused choices and recommend one.",
   "Ask at most one follow-up question when needed.",
 ].join(" ");
+
+function readIntEnv(name: string, fallback: number, min: number, max: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
+}
+
+function sleep(ms: number): Promise<void> {
+  if (ms <= 0) return Promise.resolve();
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isOverloadError(status: number, message: string): boolean {
+  return RETRYABLE_UPSTREAM_STATUSES.has(status) && OVERLOAD_ERROR_PATTERN.test(message);
+}
+
+function isRetryableUpstreamError(status: number, message: string): boolean {
+  if (RETRYABLE_UPSTREAM_STATUSES.has(status)) return true;
+  return OVERLOAD_ERROR_PATTERN.test(message);
+}
+
+function normalizeUpstreamErrorMessage(status: number, message: string): string {
+  const trimmed = message.trim();
+  if (isOverloadError(status, trimmed)) {
+    return "Model is temporarily overloaded. Please retry in 30-60 seconds.";
+  }
+  return trimmed || `Anthropic request failed with status ${status}.`;
+}
+
+async function readAnthropicError(response: Response): Promise<string> {
+  const fallback = `Anthropic request failed with status ${response.status}.`;
+
+  try {
+    const raw = await response.text();
+    if (!raw) return fallback;
+
+    try {
+      const parsed = JSON.parse(raw) as AnthropicErrorResponse;
+      if (parsed.error?.message?.trim()) {
+        return parsed.error.message.trim();
+      }
+    } catch {
+      // Keep raw payload fallback below.
+    }
+
+    return raw.trim() || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+async function requestAnthropicMessages(params: {
+  apiKey: string;
+  model: string;
+  systemPrompt: string;
+  messages: Array<{ role: "user" | "assistant"; content: string }>;
+  maxAttempts: number;
+  baseDelayMs: number;
+}): Promise<{ upstream: Response } | { error: string; status: number }> {
+  let lastStatus = 503;
+  let lastMessage = "Upstream request failed.";
+
+  for (let attempt = 1; attempt <= params.maxAttempts; attempt += 1) {
+    try {
+      const upstream = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": params.apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: params.model,
+          max_tokens: 4096,
+          temperature: 0.4,
+          system: params.systemPrompt,
+          messages: params.messages,
+          stream: true,
+        }),
+      });
+
+      if (upstream.ok) {
+        return { upstream };
+      }
+
+      lastStatus = upstream.status || 502;
+      lastMessage = await readAnthropicError(upstream);
+
+      if (
+        attempt < params.maxAttempts &&
+        isRetryableUpstreamError(lastStatus, lastMessage)
+      ) {
+        const backoffMs = params.baseDelayMs * 2 ** (attempt - 1);
+        await sleep(backoffMs);
+        continue;
+      }
+
+      return {
+        error: normalizeUpstreamErrorMessage(lastStatus, lastMessage),
+        status: isOverloadError(lastStatus, lastMessage) ? 503 : lastStatus,
+      };
+    } catch (error) {
+      lastStatus = 503;
+      lastMessage = error instanceof Error ? error.message : "Network error";
+
+      if (attempt < params.maxAttempts) {
+        const backoffMs = params.baseDelayMs * 2 ** (attempt - 1);
+        await sleep(backoffMs);
+        continue;
+      }
+    }
+  }
+
+  return {
+    error: normalizeUpstreamErrorMessage(lastStatus, lastMessage),
+    status: isOverloadError(lastStatus, lastMessage) ? 503 : lastStatus,
+  };
+}
 
 function buildContextPrompt(context?: ChatRequestBody["context"]): string {
   if (!context) return "";
@@ -147,39 +270,28 @@ export async function POST(request: Request) {
     ?.trim()
     .replace(/^['"]|['"]$/g, "");
   const model = configuredModel || "claude-sonnet-4-20250514";
+  const maxAttempts = readIntEnv("ANTHROPIC_RETRY_ATTEMPTS", 3, 1, 5);
+  const retryDelayMs = readIntEnv("ANTHROPIC_RETRY_DELAY_MS", 350, 0, 5000);
   const contextPrompt = buildContextPrompt(body.context);
   const systemPrompt = contextPrompt ? `${SYSTEM_PROMPT} ${contextPrompt}` : SYSTEM_PROMPT;
 
-  const upstream = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 4096,
-      temperature: 0.4,
-      system: systemPrompt,
-      messages,
-      stream: true,
-    }),
+  const upstreamResult = await requestAnthropicMessages({
+    apiKey,
+    model,
+    systemPrompt,
+    messages,
+    maxAttempts,
+    baseDelayMs: retryDelayMs,
   });
 
-  if (!upstream.ok) {
-    // Anthropic returns JSON errors even when stream: true was requested
-    let errorMessage = `Anthropic request failed with status ${upstream.status}.`;
-    try {
-      const errorData = (await upstream.json()) as AnthropicErrorResponse;
-      if (errorData.error?.message) {
-        errorMessage = errorData.error.message;
-      }
-    } catch {
-      // Use default error message
-    }
-    return NextResponse.json({ error: errorMessage }, { status: upstream.status });
+  if ("error" in upstreamResult) {
+    return NextResponse.json(
+      { error: upstreamResult.error },
+      { status: upstreamResult.status }
+    );
   }
+
+  const upstream = upstreamResult.upstream;
 
   if (!upstream.body) {
     return NextResponse.json(
@@ -222,10 +334,12 @@ export async function POST(request: Request) {
               } else if (event.type === "message_stop") {
                 controller.enqueue(encoder.encode("data: [DONE]\n\n"));
               } else if (event.type === "error") {
+                const streamError = normalizeUpstreamErrorMessage(
+                  503,
+                  event.error?.message || "Stream error"
+                );
                 controller.enqueue(
-                  encoder.encode(
-                    `data: ${JSON.stringify({ error: event.error?.message || "Stream error" })}\n\n`
-                  )
+                  encoder.encode(`data: ${JSON.stringify({ error: streamError })}\n\n`)
                 );
               }
             } catch {

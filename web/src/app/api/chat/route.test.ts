@@ -12,9 +12,14 @@ import { POST } from "./route";
 
 describe("POST /api/chat", () => {
   const originalApiKey = process.env.ANTHROPIC_API_KEY;
+  const originalRetryAttempts = process.env.ANTHROPIC_RETRY_ATTEMPTS;
+  const originalRetryDelayMs = process.env.ANTHROPIC_RETRY_DELAY_MS;
 
   afterEach(() => {
     process.env.ANTHROPIC_API_KEY = originalApiKey;
+    process.env.ANTHROPIC_RETRY_ATTEMPTS = originalRetryAttempts;
+    process.env.ANTHROPIC_RETRY_DELAY_MS = originalRetryDelayMs;
+    vi.restoreAllMocks();
   });
 
   it("rejects unauthenticated requests", async () => {
@@ -104,5 +109,66 @@ describe("POST /api/chat", () => {
     expect(fetchPayload.max_tokens).toBe(4096);
     expect(fetchMock).toHaveBeenCalledOnce();
     fetchMock.mockRestore();
+  });
+
+  it("retries transient overload errors before succeeding", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    process.env.ANTHROPIC_RETRY_ATTEMPTS = "2";
+    process.env.ANTHROPIC_RETRY_DELAY_MS = "0";
+
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: { message: "Overloaded" } }), {
+          status: 529,
+          headers: { "Content-Type": "application/json" },
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          [
+            'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"Recovered response."}}',
+            'data: {"type":"message_stop"}',
+            "",
+          ].join("\n"),
+          { status: 200 }
+        )
+      );
+
+    const request = new Request("http://localhost/api/chat", {
+      method: "POST",
+      body: JSON.stringify({ messages: [{ role: "user", content: "Try again" }] }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toContain('"token":"Recovered response."');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns a friendly message when overload persists", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    process.env.ANTHROPIC_RETRY_ATTEMPTS = "1";
+    process.env.ANTHROPIC_RETRY_DELAY_MS = "0";
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ error: { message: "Overloaded" } }), {
+        status: 529,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+
+    const request = new Request("http://localhost/api/chat", {
+      method: "POST",
+      body: JSON.stringify({ messages: [{ role: "user", content: "Help me" }] }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      error: expect.stringContaining("temporarily overloaded"),
+    });
   });
 });
