@@ -1,15 +1,23 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Paperclip, ArrowUp } from "lucide-react";
+import { Paperclip, ArrowUp, Trash2 } from "lucide-react";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
   onFileUpload?: (files: FileList) => void;
+  onClearConversation?: () => void;
+  canClearConversation?: boolean;
   disabled?: boolean;
 }
 
-export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputProps) {
+export default function ChatInput({
+  onSend,
+  onFileUpload,
+  onClearConversation,
+  canClearConversation = false,
+  disabled,
+}: ChatInputProps) {
   const [value, setValue] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -68,7 +76,21 @@ export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputP
         </div>
       )}
 
-      <div className="flex items-end gap-2 p-3">
+      <div className="flex items-center justify-end px-3 pt-2">
+        <button
+          type="button"
+          onClick={onClearConversation}
+          disabled={disabled || !canClearConversation}
+          className="inline-flex items-center gap-2 rounded-lg border border-[#d7b8a0] bg-[#fff2e8] px-3.5 py-2 text-sm font-semibold text-[#8b4f2a] transition hover:bg-[#ffe6d5] disabled:cursor-not-allowed disabled:opacity-45"
+          aria-label="Clear conversation"
+          title="Clear conversation in current thread"
+        >
+          <Trash2 size={16} />
+          Clear conversation
+        </button>
+      </div>
+
+      <div className="flex items-end gap-2 p-3 pt-2">
         <button
           onClick={() => fileInputRef.current?.click()}
           className="flex-shrink-0 rounded-lg p-2.5 text-[#8e7a65] transition-colors hover:bg-[#f3e9db] hover:text-[#665241]"

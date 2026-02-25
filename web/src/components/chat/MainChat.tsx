@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
-import { FileText, Trash2 } from "lucide-react";
+import { FileText } from "lucide-react";
 import { useProposalStore } from "@/lib/store";
 import { getNextActionText } from "@/lib/chat-actions";
 import { buildLocalAgentReply } from "@/lib/local-agent";
@@ -209,22 +209,9 @@ export default function MainChat({
               </h2>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onAction("clear-conversation")}
-              disabled={!hasSubstantiveHistory}
-              className="inline-flex items-center gap-1 rounded-full border border-[#d6c6b0] bg-white/85 px-2 py-0.5 text-[11px] font-medium text-[#6f5b47] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-45"
-              aria-label="Clear conversation"
-              title="Clear conversation in current thread"
-            >
-              <Trash2 size={12} />
-              Clear
-            </button>
-            <span className="rounded-full border border-[#cab7a0] bg-white/80 px-2 py-0.5 text-[11px] font-medium text-[#6a5642]">
-              Phase {phase}
-            </span>
-          </div>
+          <span className="rounded-full border border-[#cab7a0] bg-white/80 px-2 py-0.5 text-[11px] font-medium text-[#6a5642]">
+            Phase {phase}
+          </span>
         </div>
         <p className="mt-1 truncate text-xs text-[#695848]">Current thread: {activeThreadTitle}</p>
       </div>
@@ -258,7 +245,13 @@ export default function MainChat({
           onDismiss={onDismissPersistence}
         />
       )}
-      <ChatInput onSend={handleSend} onFileUpload={registerUploadedSources} disabled={isSending} />
+      <ChatInput
+        onSend={handleSend}
+        onFileUpload={registerUploadedSources}
+        onClearConversation={() => onAction("clear-conversation")}
+        canClearConversation={hasSubstantiveHistory}
+        disabled={isSending}
+      />
     </div>
   );
 }
