@@ -60,6 +60,10 @@ function createWelcomeMessage(): ChatMessage {
   };
 }
 
+function createClearedThreadMessages(): ChatMessage[] {
+  return [createWelcomeMessage()];
+}
+
 function createThreadId(): string {
   return `thread-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
@@ -578,18 +582,68 @@ export default function ProposalWorkspace() {
     [resetWorkspaceForNewThread, setMessages, setVersionHistory, threads]
   );
 
+  const handleClearConversation = useCallback(() => {
+    const shouldPrompt = hasSubstantiveThreadHistory(messages);
+    if (
+      shouldPrompt &&
+      typeof window !== "undefined" &&
+      !window.confirm(
+        "Clear the current conversation? This will remove all chat messages in this thread."
+      )
+    ) {
+      return;
+    }
+
+    const clearedMessages = createClearedThreadMessages();
+    const nowIso = new Date().toISOString();
+
+    resetWorkspaceForNewThread();
+    processedWorkflowMessageIdsRef.current.clear();
+    setMessages(clearedMessages);
+    setVersionHistory([]);
+    setDemoLoaded(false);
+
+    if (!activeThreadId) {
+      const threadId = createThreadId();
+      setThreads((current) => [
+        {
+          id: threadId,
+          title: "New thread",
+          titleOrigin: "auto",
+          updatedAt: nowIso,
+          messages: clearedMessages,
+          versionSnapshots: [],
+        },
+        ...current,
+      ]);
+      setActiveThreadId(threadId);
+      return;
+    }
+
+    setThreads((current) =>
+      current.map((thread) =>
+        thread.id === activeThreadId
+          ? {
+              ...thread,
+              updatedAt: nowIso,
+              messages: clearedMessages,
+              versionSnapshots: [],
+              archivedAt: null,
+            }
+          : thread
+      )
+    );
+  }, [
+    activeThreadId,
+    messages,
+    resetWorkspaceForNewThread,
+    setMessages,
+    setVersionHistory,
+  ]);
+
   const handleCreateThread = useCallback(() => {
     const threadId = createThreadId();
-    const starterMessages: ChatMessage[] = [
-      createWelcomeMessage(),
-      {
-        id: `fresh-start-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-        type: "text",
-        role: "agent",
-        content:
-          "Started a fresh proposal workspace. Share your project summary to begin the interview flow.",
-      },
-    ];
+    const starterMessages = createClearedThreadMessages();
     const created: PersistedThread = {
       id: threadId,
       title: "New thread",
@@ -888,6 +942,9 @@ export default function ProposalWorkspace() {
       if (action === "open-settings") {
         setSettingsOpen(true);
         return;
+      } else if (action === "clear-conversation") {
+        handleClearConversation();
+        return;
       } else if (action === "show-welcome" || action === "welcome" || action === "/welcome") {
         addMessage(createWelcomeMessage());
       } else if (action === "start-fresh") {
@@ -1154,6 +1211,7 @@ export default function ProposalWorkspace() {
       addMessage,
       conversationContext,
       handleCreateThread,
+      handleClearConversation,
       handlePhaseClick,
       messages,
       openContextPanel,

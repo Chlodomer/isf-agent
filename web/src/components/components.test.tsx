@@ -64,6 +64,20 @@ describe("component coverage and failure/security behaviors", () => {
     render(<MainChat onAction={vi.fn()} />);
     expect(screen.getByText(/granite workspace/i)).toBeInTheDocument();
     expect(screen.getByText(/current thread/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /clear conversation/i })).toBeInTheDocument();
+  });
+
+  it("MainChat clear button emits clear-conversation action", async () => {
+    const user = userEvent.setup();
+    const onAction = vi.fn();
+
+    patchProposalStore({
+      messages: [{ id: "u1", type: "text", role: "user", content: "Keep this scoped." }],
+    });
+
+    render(<MainChat onAction={onAction} />);
+    await user.click(screen.getByRole("button", { name: /clear conversation/i }));
+    expect(onAction).toHaveBeenCalledWith("clear-conversation");
   });
 
   it("MessageThread renders text and escapes script tags", () => {
