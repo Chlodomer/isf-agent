@@ -72,3 +72,29 @@ h3,
 *::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-faint);
 }
+
+@keyframes sheet-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+[dir="rtl"] .motion-safe\:animate-\[sheet-in_200ms_ease-out\] {
+  animation-name: sheet-in-rtl;
+}
+
+@keyframes sheet-in-rtl {
+  from {
+    transform: translateX(-24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
