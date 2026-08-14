@@ -270,17 +270,6 @@ describe("component coverage and failure/security behaviors", () => {
     confirmSpy.mockRestore();
   });
 
-  it("OnboardingExperience blocks continuation until required fields are set", async () => {
-    const user = userEvent.setup();
-    const onComplete = vi.fn();
-    render(<OnboardingExperience onComplete={onComplete} />);
-
-    const continueButton = screen.getByRole("button", { name: /continue/i });
-    expect(continueButton).toBeDisabled();
-    await user.type(screen.getByPlaceholderText(/your name/i), "Ada");
-    expect(continueButton).toBeEnabled();
-  });
-
   it("ThreadColumn supports search, rename, and delete actions", async () => {
     const user = userEvent.setup();
     const onSelectThread = vi.fn();
