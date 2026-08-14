@@ -2,9 +2,28 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import FirstRunSplash from "@/components/shared/FirstRunSplash";
 
+function installLocalStorageMock() {
+  const store = new Map<string, string>();
+  const mock = {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, String(value));
+    },
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+    clear: () => store.clear(),
+    key: (index: number) => [...store.keys()][index] ?? null,
+    get length() {
+      return store.size;
+    },
+  };
+  Object.defineProperty(window, "localStorage", { value: mock, configurable: true });
+}
+
 describe("FirstRunSplash", () => {
   beforeEach(() => {
-    window.localStorage.removeItem("isf.intro.completed");
+    installLocalStorageMock();
     vi.useFakeTimers();
   });
 
