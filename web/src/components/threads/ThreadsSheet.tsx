@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import Sheet from "@/components/shell/Sheet";
 import ThreadColumn, { type ThreadSummary } from "./ThreadColumn";
 
@@ -23,6 +25,8 @@ export default function ThreadsSheet({
   onClose,
   ...columnProps
 }: ThreadsSheetProps) {
+  const [confirmingClear, setConfirmingClear] = useState(false);
+
   return (
     <Sheet
       label={`${columnProps.threads.length} active`}
@@ -37,7 +41,7 @@ export default function ThreadsSheet({
             New thread
           </button>
           <button
-            onClick={onClearConversation}
+            onClick={() => setConfirmingClear(true)}
             className="text-muted transition-colors hover:text-ink"
           >
             Clear current conversation
@@ -46,6 +50,19 @@ export default function ThreadsSheet({
       }
     >
       <ThreadColumn {...columnProps} />
+      <ConfirmDialog
+        open={confirmingClear}
+        title="Clear this conversation?"
+        message="All messages in the current thread will be removed. The thread itself stays in your list."
+        confirmLabel="Clear conversation"
+        cancelLabel="Keep messages"
+        variant="danger"
+        onConfirm={() => {
+          setConfirmingClear(false);
+          onClearConversation();
+        }}
+        onCancel={() => setConfirmingClear(false)}
+      />
     </Sheet>
   );
 }

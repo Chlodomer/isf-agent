@@ -36,8 +36,7 @@ describe("ThreadsSheet", () => {
     expect(onSelectThread).toHaveBeenCalledWith("t1");
   });
 
-  it("exposes clear conversation and new thread in the footer", () => {
-    const onClearConversation = vi.fn();
+  it("exposes new thread in the footer", () => {
     const onCreateThread = vi.fn();
     render(
       <ThreadsSheet
@@ -51,15 +50,44 @@ describe("ThreadsSheet", () => {
         onRestoreThread={() => {}}
         onPermanentDelete={() => {}}
         onEmptyTrash={() => {}}
+        onClearConversation={() => {}}
+        onClose={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^new thread$/i }));
+    expect(onCreateThread).toHaveBeenCalled();
+  });
+
+  it("requires confirmation via ConfirmDialog before clearing the conversation", () => {
+    const onClearConversation = vi.fn();
+    render(
+      <ThreadsSheet
+        threads={threads}
+        archivedThreads={[]}
+        activeThreadId="t1"
+        onSelectThread={() => {}}
+        onCreateThread={() => {}}
+        onRenameThread={() => {}}
+        onDeleteThread={() => {}}
+        onRestoreThread={() => {}}
+        onPermanentDelete={() => {}}
+        onEmptyTrash={() => {}}
         onClearConversation={onClearConversation}
         onClose={() => {}}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: /clear current conversation/i }));
-    expect(onClearConversation).toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole("button", { name: /^new thread$/i }));
-    expect(onCreateThread).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: /clear current conversation/i }));
+    expect(onClearConversation).not.toHaveBeenCalled();
+    expect(screen.getByText(/clear this conversation\?/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /keep messages/i }));
+    expect(onClearConversation).not.toHaveBeenCalled();
+    expect(screen.queryByText(/clear this conversation\?/i)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /clear current conversation/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^clear conversation$/i }));
+    expect(onClearConversation).toHaveBeenCalledTimes(1);
   });
 
   it("closes on close button click", () => {

@@ -209,10 +209,6 @@ function deriveThreadSnippet(messages: ChatMessage[]): string {
   return snippet.length > 90 ? `${snippet.slice(0, 87)}...` : snippet;
 }
 
-function hasSubstantiveThreadHistory(messages: ChatMessage[]): boolean {
-  return messages.some((message) => message.type !== "welcome");
-}
-
 function downloadJsonFile(filename: string, payload: unknown) {
   const blob = new Blob([JSON.stringify(payload, null, 2)], {
     type: "application/json",
@@ -533,17 +529,6 @@ export default function ProposalWorkspace() {
   );
 
   const handleClearConversation = useCallback(() => {
-    const shouldPrompt = hasSubstantiveThreadHistory(messages);
-    if (
-      shouldPrompt &&
-      typeof window !== "undefined" &&
-      !window.confirm(
-        "Clear the current conversation? This will remove all chat messages in this thread."
-      )
-    ) {
-      return;
-    }
-
     const clearedMessages = createClearedThreadMessages();
     const nowIso = new Date().toISOString();
 
@@ -583,13 +568,7 @@ export default function ProposalWorkspace() {
           : thread
       )
     );
-  }, [
-    activeThreadId,
-    messages,
-    resetWorkspaceForNewThread,
-    setMessages,
-    setVersionHistory,
-  ]);
+  }, [activeThreadId, resetWorkspaceForNewThread, setMessages, setVersionHistory]);
 
   const handleCreateThread = useCallback(() => {
     const threadId = createThreadId();
