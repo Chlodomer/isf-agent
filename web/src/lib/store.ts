@@ -62,6 +62,7 @@ interface ProposalStore {
   addMessage: (message: ChatMessage) => void;
   setMessages: (messages: ChatMessage[]) => void;
   updateMessage: (id: string, content: string) => void;
+  removeMessage: (id: string) => void;
   toggleContextPanel: () => void;
   setContextTab: (tab: ContextTab) => void;
   openContextPanel: (tab: ContextTab) => void;
@@ -304,6 +305,12 @@ export const useProposalStore = create<ProposalStore>((set) => ({
           ? { ...msg, content }
           : msg
       ),
+      session: touchSession(state.session),
+    })),
+
+  removeMessage: (id) =>
+    set((state) => ({
+      messages: state.messages.filter((msg) => msg.id !== id),
       session: touchSession(state.session),
     })),
 

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useProposalStore } from "@/lib/store";
 import { DEMO_MESSAGES } from "@/lib/demo-data";
-import MainChat from "@/components/chat/MainChat";
+import MainChat, { type StreamFailure } from "@/components/chat/MainChat";
 import WorkspaceShell from "@/components/shell/WorkspaceShell";
 import JourneySheet from "@/components/shell/JourneySheet";
 import TourOverlay from "@/components/shell/TourOverlay";
@@ -24,6 +24,7 @@ import {
 } from "@/lib/types";
 import { buildLocalAgentReply } from "@/lib/local-agent";
 import { streamAssistantReply } from "@/lib/chat-backend";
+import { historyBeforePrompt, scrubFailedReplies } from "@/lib/thread-hygiene";
 import { runComplianceValidation } from "@/lib/compliance";
 import { buildReadinessSnapshot } from "@/lib/readiness";
 import { useChatPersistence } from "@/lib/use-chat-persistence";
@@ -236,6 +237,7 @@ export default function ProposalWorkspace() {
   const addMessage = useProposalStore((s) => s.addMessage);
   const setMessages = useProposalStore((s) => s.setMessages);
   const updateMessage = useProposalStore((s) => s.updateMessage);
+  const removeMessage = useProposalStore((s) => s.removeMessage);
   const openContextPanel = useProposalStore((s) => s.openContextPanel);
   const toggleContextPanel = useProposalStore((s) => s.toggleContextPanel);
   const researcherInfo = useProposalStore((s) => s.researcherInfo);
@@ -266,6 +268,7 @@ export default function ProposalWorkspace() {
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus>("checking");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  const [streamFailure, setStreamFailure] = useState<StreamFailure | null>(null);
 
   useEffect(() => {
     processedWorkflowMessageIdsRef.current.clear();
@@ -320,10 +323,12 @@ export default function ProposalWorkspace() {
             parsedThreads = candidate
               .filter((thread) => typeof thread.id === "string")
               .map((thread) => {
-                const normalizedMessages =
+                const scrubbedMessages =
                   Array.isArray(thread.messages) && thread.messages.length > 0
-                    ? thread.messages
-                    : [createWelcomeMessage()];
+                    ? scrubFailedReplies(thread.messages)
+                    : [];
+                const normalizedMessages =
+                  scrubbedMessages.length > 0 ? scrubbedMessages : [createWelcomeMessage()];
                 const normalizedTitle = thread.title || "New thread";
                 const normalizedSnapshots = Array.isArray(thread.versionSnapshots)
                   ? thread.versionSnapshots
@@ -784,6 +789,66 @@ export default function ProposalWorkspace() {
     }
   }, [interview, learnings, phase, proposalSections, requirements.fetched, setPhase, validation]);
 
+  const runActionAssistantStream = useCallback(
+    (content: string, history: ChatMessage[]) => {
+      const assistantMsgId = `action-assistant-${Date.now()}`;
+      actionStreamRef.current = "";
+      addMessage({
+        id: assistantMsgId,
+        type: "text",
+        role: "agent",
+        content: "",
+      });
+
+      let rafPending = false;
+
+      void streamAssistantReply(
+        history,
+        content,
+        conversationContext(),
+        (token) => {
+          actionStreamRef.current += token;
+          if (!rafPending) {
+            rafPending = true;
+            requestAnimationFrame(() => {
+              rafPending = false;
+              updateMessage(assistantMsgId, actionStreamRef.current);
+            });
+          }
+        },
+        () => {
+          updateMessage(assistantMsgId, actionStreamRef.current);
+          if (actionStreamRef.current.trim().length > 0) {
+            syncAssistantReplyToWorkspace(content, actionStreamRef.current);
+          }
+          setStreamFailure(null);
+        },
+        (error) => {
+          if (actionStreamRef.current.length === 0) {
+            removeMessage(assistantMsgId);
+            setStreamFailure({ prompt: content, message: error, source: "action" });
+          }
+        },
+      );
+    },
+    [addMessage, conversationContext, removeMessage, syncAssistantReplyToWorkspace, updateMessage]
+  );
+
+  const handleDismissStreamFailure = useCallback(() => {
+    setStreamFailure(null);
+  }, []);
+
+  const handleStreamFailureFromChat = useCallback((prompt: string, message: string) => {
+    setStreamFailure({ prompt, message, source: "chat" });
+  }, []);
+
+  const handleRetryActionFailure = useCallback(() => {
+    if (!streamFailure || streamFailure.source !== "action") return;
+    const prompt = streamFailure.prompt;
+    setStreamFailure(null);
+    runActionAssistantStream(prompt, historyBeforePrompt(messages, prompt));
+  }, [messages, runActionAssistantStream, streamFailure]);
+
   const handleAction = useCallback(
     (action: string) => {
       if (action.startsWith("go-phase:")) {
@@ -1104,56 +1169,19 @@ export default function ProposalWorkspace() {
           return;
         }
 
-        const assistantMsgId = `action-assistant-${Date.now()}`;
-        actionStreamRef.current = "";
-        addMessage({
-          id: assistantMsgId,
-          type: "text",
-          role: "agent",
-          content: "",
-        });
-
-        let rafPending = false;
-
-        void streamAssistantReply(
-          messages,
-          content,
-          conversationContext(),
-          (token) => {
-            actionStreamRef.current += token;
-            if (!rafPending) {
-              rafPending = true;
-              requestAnimationFrame(() => {
-                rafPending = false;
-                updateMessage(assistantMsgId, actionStreamRef.current);
-              });
-            }
-          },
-          () => {
-            updateMessage(assistantMsgId, actionStreamRef.current);
-            if (actionStreamRef.current.trim().length > 0) {
-              syncAssistantReplyToWorkspace(content, actionStreamRef.current);
-            }
-          },
-          (error) => {
-            if (actionStreamRef.current.length === 0) {
-              updateMessage(assistantMsgId, `I couldn't complete the request: ${error}`);
-            }
-          },
-        );
+        runActionAssistantStream(content, messages);
       }
     },
     [
       addMessage,
       conversationContext,
       handleCreateThread,
+      runActionAssistantStream,
       handleClearConversation,
       handlePhaseClick,
       messages,
       openContextPanel,
       toggleContextPanel,
-      updateMessage,
-      syncAssistantReplyToWorkspace,
       phase,
       projectInfo,
       proposalSections,
@@ -1242,6 +1270,10 @@ export default function ProposalWorkspace() {
           showPersistenceBanner={showBanner}
           onAcceptPersistence={handleAcceptPersistence}
           onDismissPersistence={handleDismissBanner}
+          streamFailure={streamFailure}
+          onStreamFailure={handleStreamFailureFromChat}
+          onRetryFailure={handleRetryActionFailure}
+          onDismissFailure={handleDismissStreamFailure}
         />
 
         {contextPanelOpen && (activeContextTab === "journey" || activeContextTab === "operations") && (

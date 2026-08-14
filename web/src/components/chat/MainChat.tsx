@@ -4,10 +4,18 @@ import { useCallback, useRef, useState } from "react";
 import { useProposalStore } from "@/lib/store";
 import { buildLocalAgentReply } from "@/lib/local-agent";
 import { streamAssistantReply } from "@/lib/chat-backend";
-import type { ReferenceSource } from "@/lib/types";
+import { historyBeforePrompt } from "@/lib/thread-hygiene";
+import type { ChatMessage, ReferenceSource } from "@/lib/types";
 import MessageThread from "./MessageThread";
 import ChatInput from "./ChatInput";
 import ChatPersistenceBanner from "./ChatPersistenceBanner";
+import StreamFailureNotice from "./StreamFailureNotice";
+
+export interface StreamFailure {
+  prompt: string;
+  message: string;
+  source: "chat" | "action";
+}
 
 interface MainChatProps {
   onAction: (action: string) => void;
@@ -15,6 +23,10 @@ interface MainChatProps {
   showPersistenceBanner?: boolean;
   onAcceptPersistence?: () => void;
   onDismissPersistence?: () => void;
+  streamFailure?: StreamFailure | null;
+  onStreamFailure?: (prompt: string, message: string) => void;
+  onRetryFailure?: () => void;
+  onDismissFailure?: () => void;
 }
 
 export default function MainChat({
@@ -23,6 +35,10 @@ export default function MainChat({
   showPersistenceBanner = false,
   onAcceptPersistence,
   onDismissPersistence,
+  streamFailure = null,
+  onStreamFailure,
+  onRetryFailure,
+  onDismissFailure,
 }: MainChatProps) {
   const messages = useProposalStore((s) => s.messages);
   const phase = useProposalStore((s) => s.session.currentPhase);
@@ -31,6 +47,7 @@ export default function MainChat({
   const addReferenceSources = useProposalStore((s) => s.addReferenceSources);
   const addMessage = useProposalStore((s) => s.addMessage);
   const updateMessage = useProposalStore((s) => s.updateMessage);
+  const removeMessage = useProposalStore((s) => s.removeMessage);
   const [isSending, setIsSending] = useState(false);
   const accumulatedRef = useRef("");
 
@@ -66,8 +83,77 @@ export default function MainChat({
     [addMessage, addReferenceSources, referenceSources.length]
   );
 
+  const runStream = useCallback(
+    (promptContent: string, history: ChatMessage[]) => {
+      setIsSending(true);
+      const assistantMsgId = `msg-${Date.now()}-assistant`;
+      accumulatedRef.current = "";
+
+      addMessage({
+        id: assistantMsgId,
+        type: "text",
+        role: "agent",
+        content: "",
+      });
+
+      let rafPending = false;
+
+      void streamAssistantReply(
+        history,
+        promptContent,
+        {
+          name: researcherInfo.name,
+          affiliation: researcherInfo.department,
+          sources: referenceSources.map((source) => ({
+            id: source.id,
+            label: source.label,
+            filename: source.filename,
+          })),
+        },
+        (token) => {
+          accumulatedRef.current += token;
+          if (!rafPending) {
+            rafPending = true;
+            requestAnimationFrame(() => {
+              rafPending = false;
+              updateMessage(assistantMsgId, accumulatedRef.current);
+            });
+          }
+        },
+        () => {
+          // Flush any remaining tokens
+          updateMessage(assistantMsgId, accumulatedRef.current);
+          if (accumulatedRef.current.trim().length > 0) {
+            onAssistantReply?.(promptContent, accumulatedRef.current);
+          }
+          setIsSending(false);
+          onDismissFailure?.();
+        },
+        (error) => {
+          if (accumulatedRef.current.length === 0) {
+            removeMessage(assistantMsgId);
+            onStreamFailure?.(promptContent, error);
+          }
+          setIsSending(false);
+        },
+      );
+    },
+    [
+      addMessage,
+      onAssistantReply,
+      onDismissFailure,
+      onStreamFailure,
+      referenceSources,
+      removeMessage,
+      researcherInfo.department,
+      researcherInfo.name,
+      updateMessage,
+    ]
+  );
+
   const handleSend = (content: string) => {
     if (isSending) return;
+    onDismissFailure?.();
 
     const normalized = content.trim().toLowerCase();
     if (
@@ -100,57 +186,26 @@ export default function MainChat({
       return;
     }
 
-    setIsSending(true);
-    const assistantMsgId = `msg-${Date.now()}-assistant`;
-    accumulatedRef.current = "";
-
-    addMessage({
-      id: assistantMsgId,
-      type: "text",
-      role: "agent",
-      content: "",
-    });
-
-    let rafPending = false;
-
-    void streamAssistantReply(
-      messages,
-      content,
-      {
-        name: researcherInfo.name,
-        affiliation: researcherInfo.department,
-        sources: referenceSources.map((source) => ({
-          id: source.id,
-          label: source.label,
-          filename: source.filename,
-        })),
-      },
-      (token) => {
-        accumulatedRef.current += token;
-        if (!rafPending) {
-          rafPending = true;
-          requestAnimationFrame(() => {
-            rafPending = false;
-            updateMessage(assistantMsgId, accumulatedRef.current);
-          });
-        }
-      },
-      () => {
-        // Flush any remaining tokens
-        updateMessage(assistantMsgId, accumulatedRef.current);
-        if (accumulatedRef.current.trim().length > 0) {
-          onAssistantReply?.(content, accumulatedRef.current);
-        }
-        setIsSending(false);
-      },
-      (error) => {
-        if (accumulatedRef.current.length === 0) {
-          updateMessage(assistantMsgId, `I couldn't complete the request: ${error}`);
-        }
-        setIsSending(false);
-      },
-    );
+    runStream(content, messages);
   };
+
+  const retrySend = useCallback(
+    (prompt: string) => {
+      if (isSending) return;
+      onDismissFailure?.();
+      runStream(prompt, historyBeforePrompt(messages, prompt));
+    },
+    [isSending, messages, onDismissFailure, runStream]
+  );
+
+  const handleRetryFailure = useCallback(() => {
+    if (!streamFailure) return;
+    if (streamFailure.source === "chat") {
+      retrySend(streamFailure.prompt);
+      return;
+    }
+    onRetryFailure?.();
+  }, [onRetryFailure, retrySend, streamFailure]);
 
   return (
     <div className="flex-1 flex flex-col min-w-0 min-h-[66vh] lg:min-h-0 h-full">
@@ -167,6 +222,13 @@ export default function MainChat({
             onDismiss={onDismissPersistence}
           />
         </div>
+      )}
+      {streamFailure && (
+        <StreamFailureNotice
+          message={streamFailure.message}
+          onRetry={handleRetryFailure}
+          onDismiss={() => onDismissFailure?.()}
+        />
       )}
       <ChatInput
         onSend={handleSend}
