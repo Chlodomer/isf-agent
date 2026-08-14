@@ -25,7 +25,7 @@ export default function ResumeSessionCard({
       </p>
 
       <div className="flex gap-3.5 font-sans text-[12.5px] pt-2">
-        <button onClick={() => onAction?.("continue")} className="border-b border-ink text-ink">
+        <button onClick={() => onAction?.(`go-phase:${currentPhase}`)} className="border-b border-ink text-ink">
           Continue
         </button>
         <button

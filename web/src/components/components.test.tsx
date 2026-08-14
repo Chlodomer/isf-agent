@@ -229,7 +229,7 @@ describe("component coverage and failure/security behaviors", () => {
       />
     );
     await user.click(screen.getByRole("button", { name: /^continue$/i }));
-    expect(onAction).toHaveBeenCalledWith("continue");
+    expect(onAction).toHaveBeenCalledWith("go-phase:4");
   });
 
   it("WelcomeCard renders a short bare greeting", () => {
