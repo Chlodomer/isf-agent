@@ -30,6 +30,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
           <p className="mt-1 text-center font-sans text-[12px] text-muted">
             ISF grant writing, thought through.
           </p>
+          <p className="ui-label mt-6 text-center text-muted">Sign in</p>
         </div>
 
         {error && (
@@ -38,7 +39,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
           </div>
         )}
 
-        <form action={signInWithCredentials} className="mt-6 space-y-4">
+        <form action={signInWithCredentials} className="mt-4 space-y-4">
           <input type="hidden" name="callbackUrl" value={callbackUrl} />
           <label className="block">
             <span className="ui-label text-muted mb-1 block">Email</span>
