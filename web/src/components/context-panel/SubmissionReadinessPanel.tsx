@@ -10,9 +10,9 @@ interface SubmissionReadinessPanelProps {
 }
 
 function statusStyles(status: ReadinessStatus): string {
-  if (status === "ready") return "bg-emerald-100 text-emerald-700";
-  if (status === "in_progress") return "bg-cyan-100 text-cyan-700";
-  return "bg-amber-100 text-amber-700";
+  if (status === "ready") return "text-learning";
+  if (status === "in_progress") return "text-challenge";
+  return "text-blocker";
 }
 
 function statusLabel(status: ReadinessStatus): string {
@@ -39,60 +39,60 @@ export default function SubmissionReadinessPanel({ onAction }: SubmissionReadine
   );
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-slate-200 px-4 py-3">
-        <h3 className="font-display text-sm text-slate-900">Submission Readiness</h3>
-        <p className="mt-1 text-xs text-slate-500">Track blockers before final assembly.</p>
+    <div className="flex flex-col">
+      <div className="border-b border-hairline pb-3">
+        <h3 className="font-serif text-[15px] text-ink">Submission Readiness</h3>
+        <p className="mt-1 text-xs text-muted">Track blockers before final assembly.</p>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
-        <section className="rounded-xl border border-slate-200 bg-white p-3">
+      <div className="flex-1 space-y-4 py-4">
+        <section className="border-b border-hairline pb-4">
           <div className="mb-2 flex items-center justify-between text-xs">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-2 py-1 font-semibold text-teal-700">
+            <span className="inline-flex items-center gap-1.5 ui-label text-muted">
               <Gauge size={12} />
               Readiness score
             </span>
-            <span className="font-semibold text-slate-700">{snapshot.score}%</span>
+            <span className="font-semibold text-ink">{snapshot.score}%</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+          <div className="h-1.5 overflow-hidden rounded-full bg-hairline">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-teal-500 to-cyan-500"
+              className="h-full rounded-full bg-ink"
               style={{ width: `${Math.max(snapshot.score, 6)}%` }}
             />
           </div>
-          <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+          <div className="mt-2 flex items-center gap-3 text-xs text-muted">
             <span className="inline-flex items-center gap-1">
-              <AlertTriangle size={12} className="text-amber-500" />
+              <AlertTriangle size={12} className="text-challenge" />
               {snapshot.blockers} blocker(s)
             </span>
             <span className="inline-flex items-center gap-1">
-              <Clock3 size={12} className="text-cyan-600" />
+              <Clock3 size={12} className="text-muted" />
               {snapshot.inProgress} in progress
             </span>
             <span className="inline-flex items-center gap-1">
-              <CheckCircle2 size={12} className="text-emerald-600" />
+              <CheckCircle2 size={12} className="text-learning" />
               {snapshot.items.length - snapshot.blockers - snapshot.inProgress} ready
             </span>
           </div>
         </section>
 
-        <section className="space-y-2">
+        <section className="space-y-3">
           {snapshot.items.map((item) => (
-            <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-3">
+            <div key={item.id} className="border-b border-hairline pb-3 last:border-b-0">
               <div className="mb-1 flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold text-slate-800">{item.title}</p>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusStyles(item.status)}`}>
+                <p className="text-xs font-semibold text-ink">{item.title}</p>
+                <span className={`ui-label ${statusStyles(item.status)}`}>
                   {statusLabel(item.status)}
                 </span>
               </div>
-              <p className="text-xs leading-relaxed text-slate-500">{item.detail}</p>
+              <p className="text-xs leading-relaxed text-muted">{item.detail}</p>
               {item.action && item.status !== "ready" && (
                 <button
                   onClick={() => {
                     if (!item.action) return;
                     onAction?.(item.action);
                   }}
-                  className="mt-2 text-xs font-semibold text-teal-700 hover:text-teal-800"
+                  className="mt-2 border-b border-ink text-xs text-ink"
                 >
                   Resolve now
                 </button>
@@ -102,17 +102,17 @@ export default function SubmissionReadinessPanel({ onAction }: SubmissionReadine
         </section>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 border-t border-slate-200 px-4 py-3">
+      <div className="flex gap-4 border-t border-hairline pt-3 text-xs">
         <button
           onClick={() => onAction?.("/validate")}
-          className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          className="inline-flex items-center gap-1 border-b border-ink text-ink"
         >
           <ShieldCheck size={12} />
           Run check
         </button>
         <button
           onClick={() => onAction?.("open-compliance")}
-          className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          className="inline-flex items-center gap-1 text-muted transition-colors hover:text-ink"
         >
           <AlertTriangle size={12} />
           View blockers

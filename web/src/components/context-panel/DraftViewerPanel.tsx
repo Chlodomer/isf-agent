@@ -19,8 +19,8 @@ export default function DraftViewerPanel() {
 
   if (!hasDrafts) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center h-64">
-        <p className="text-sm text-gray-500 leading-relaxed">
+      <div className="flex h-64 flex-col items-center justify-center p-8 text-center">
+        <p className="text-sm leading-relaxed text-muted">
           Your proposal will appear here as we build it together. Once we have
           enough information, the Abstract will be drafted first.
         </p>
@@ -40,34 +40,34 @@ export default function DraftViewerPanel() {
   const compiledPreview = buildCompiledProposalPreview(sections);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <h3 className="text-xs font-semibold text-gray-700 uppercase">Proposal Draft</h3>
-        <button className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors">
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
+        <h3 className="ui-label text-muted">Proposal Draft</h3>
+        <button className="flex items-center gap-1 text-xs text-muted transition-colors hover:text-ink">
           <Download size={12} />
           Export PDF
         </button>
       </div>
 
-      <div className="px-4 py-2 border-b border-gray-100">
-        <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+      <div className="border-b border-hairline px-4 py-2">
+        <div className="inline-flex gap-4 font-sans text-xs">
           <button
             onClick={() => setMode("sections")}
-            className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
+            className={
               mode === "sections"
-                ? "bg-white text-gray-700 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+                ? "border-b border-ink text-ink"
+                : "text-muted transition-colors hover:text-ink"
+            }
           >
             Sections
           </button>
           <button
             onClick={() => setMode("compiled")}
-            className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
+            className={
               mode === "compiled"
-                ? "bg-white text-gray-700 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+                ? "border-b border-ink text-ink"
+                : "text-muted transition-colors hover:text-ink"
+            }
           >
             Compiled Preview
           </button>
@@ -86,45 +86,37 @@ export default function DraftViewerPanel() {
             const limitInfo = getSectionLimitInfo(key, wordCount);
 
             return (
-              <div key={key} className="border-b border-gray-50">
+              <div key={key} className="border-b border-hairline">
                 <button
                   onClick={() => setExpanded(isExpanded ? null : key)}
-                  className="w-full flex items-center gap-2 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                  className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-canvas"
                   disabled={!hasDraft}
                 >
                   <div className="flex-shrink-0">
                     {isApproved ? (
-                      <Check size={14} className="text-emerald-500" />
+                      <Check size={14} className="text-learning" />
                     ) : hasDraft ? (
                       isExpanded ? (
-                        <ChevronDown size={14} className="text-blue-500" />
+                        <ChevronDown size={14} className="text-ink" />
                       ) : (
-                        <ChevronRight size={14} className="text-blue-500" />
+                        <ChevronRight size={14} className="text-ink" />
                       )
                     ) : (
-                      <Minus size={14} className="text-gray-300" />
+                      <Minus size={14} className="text-faint" />
                     )}
                   </div>
 
                   <span
-                    className={`text-sm flex-1 ${
-                      isApproved
-                        ? "text-emerald-700"
-                        : hasDraft
-                        ? "text-gray-700"
-                        : "text-gray-400"
+                    className={`flex-1 text-sm ${
+                      isApproved ? "text-learning" : hasDraft ? "text-body" : "text-faint"
                     }`}
                   >
                     {SECTION_LABELS[key]}
                   </span>
 
                   <span
-                    className={`text-xs px-2 py-0.5 rounded-full ${
-                      isApproved
-                        ? "bg-emerald-50 text-emerald-600"
-                        : hasDraft
-                        ? "bg-blue-50 text-blue-600"
-                        : "bg-gray-50 text-gray-400"
+                    className={`ui-label ${
+                      isApproved ? "text-learning" : hasDraft ? "text-ink" : "text-faint"
                     }`}
                   >
                     {isApproved ? "Approved" : hasDraft ? "Draft ready" : "Not started"}
@@ -133,40 +125,36 @@ export default function DraftViewerPanel() {
 
                 {isExpanded && hasDraft && (
                   <div className="px-4 pb-4">
-                    <div className="bg-gray-50 rounded-md p-3 text-sm text-gray-700 leading-relaxed max-h-64 overflow-y-auto whitespace-pre-wrap">
+                    <div className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-md border border-hairline p-3 text-sm leading-relaxed text-body">
                       {section.draft}
                     </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-500">
-                        {wordCount} words
-                      </span>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-500">
-                        {charCount} chars
-                      </span>
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted">
+                      <span>{wordCount} words</span>
+                      <span>{charCount} chars</span>
                       {limitInfo.limit && (
                         <span
-                          className={`rounded-full px-2 py-0.5 ${
+                          className={
                             limitInfo.tone === "over"
-                              ? "bg-red-100 text-red-700"
+                              ? "text-blocker"
                               : limitInfo.tone === "near"
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-emerald-100 text-emerald-700"
-                          }`}
+                              ? "text-challenge"
+                              : "text-learning"
+                          }
                         >
                           limit {limitInfo.limit} words
                         </span>
                       )}
                     </div>
-                    <div className="mt-2 flex gap-2">
+                    <div className="mt-2 flex gap-4 text-xs">
                       <button
                         onClick={() => setSectionApproval(key, true)}
-                        className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+                        className="border-b border-ink text-ink"
                       >
                         Approve section
                       </button>
                       <button
                         onClick={() => setSectionApproval(key, false)}
-                        className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                        className="text-muted transition-colors hover:text-ink"
                       >
                         Request changes
                       </button>
@@ -180,18 +168,18 @@ export default function DraftViewerPanel() {
       ) : (
         <div className="flex-1 overflow-y-auto p-4">
           {compiledPreview ? (
-            <div className="rounded-md border border-gray-200 bg-gray-50 p-3 text-sm leading-relaxed whitespace-pre-wrap text-gray-700">
+            <div className="whitespace-pre-wrap rounded-md border border-hairline p-3 text-sm leading-relaxed text-body">
               {compiledPreview}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted">
               No compiled preview yet. Draft at least one section to build it.
             </p>
           )}
         </div>
       )}
 
-      <div className="px-4 py-3 border-t border-gray-100 text-xs text-gray-400">
+      <div className="border-t border-hairline px-4 py-3 text-xs text-faint">
         {approvedCount}/{SECTION_ORDER.length} sections approved
         &middot; {totalWords.toLocaleString()} words
         &middot; ~{totalEstPages.toFixed(1)} pages

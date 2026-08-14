@@ -13,8 +13,8 @@ export default function InterviewTrackerPanel() {
 
   if (!hasStarted) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center h-64">
-        <p className="text-sm text-gray-500 leading-relaxed">
+      <div className="flex h-64 flex-col items-center justify-center p-8 text-center">
+        <p className="text-sm leading-relaxed text-muted">
           The interview will gather information about your research project
           across 4 sections: eligibility, research core, resources, and track
           record. This helps draft accurate, personalized proposal sections.
@@ -26,17 +26,15 @@ export default function InterviewTrackerPanel() {
   const skippedCount = interview.skippedQuestions.length;
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="px-4 py-3 border-b border-gray-100">
-        <h3 className="text-xs font-semibold text-gray-700 uppercase">
-          Interview Progress
-        </h3>
-        <p className="mt-1 text-xs text-gray-500">
+    <div className="flex flex-col">
+      <div className="border-b border-hairline pb-3">
+        <h3 className="ui-label text-muted">Interview Progress</h3>
+        <p className="mt-1 text-xs text-faint">
           {totalAnswered}/{TOTAL_INTERVIEW_QUESTIONS} questions answered
         </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 space-y-4 py-4">
         {INTERVIEW_SECTIONS.map((section) => {
           const isCompleted = interview.completedSections.includes(section.id);
           const isCurrent = interview.currentSection === section.id;
@@ -57,35 +55,33 @@ export default function InterviewTrackerPanel() {
 
           return (
             <div key={section.id}>
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="mb-1.5 flex items-center justify-between">
                 <span
                   className={`text-sm ${
                     isCurrent
-                      ? "font-medium text-teal-700"
+                      ? "font-medium text-ink"
                       : isCompleted
-                      ? "text-gray-500"
-                      : "text-gray-400"
+                      ? "text-muted"
+                      : "text-faint"
                   }`}
                 >
                   {section.label}
                 </span>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-faint">
                   {answeredCount}/{section.totalQuestions}
                   {isCompleted && " done"}
                 </span>
               </div>
 
-              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+              <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-hairline">
                 <div
-                  className={`h-full rounded-full transition-all ${
-                    isCompleted ? "bg-teal-500" : "bg-teal-400"
-                  }`}
+                  className="h-full rounded-full bg-ink transition-all"
                   style={{ width: `${progress}%` }}
                 />
               </div>
 
               {isCurrent && (
-                <div className="space-y-1 ml-1">
+                <div className="ms-1 space-y-1">
                   {Array.from({ length: section.totalQuestions }, (_, i) => {
                     const qNum = i + 1;
                     const isAnswered = qNum < currentQ;
@@ -100,23 +96,23 @@ export default function InterviewTrackerPanel() {
                         className="flex items-center gap-2 text-xs"
                       >
                         {isAnswered ? (
-                          <Check size={10} className="text-teal-500" />
+                          <Check size={10} className="text-learning" />
                         ) : isCurrentQ ? (
-                          <ArrowRight size={10} className="text-teal-600" />
+                          <ArrowRight size={10} className="text-ink" />
                         ) : isSkipped ? (
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-300" />
+                          <span className="h-2.5 w-2.5 rounded-full bg-challenge" />
                         ) : (
-                          <Minus size={10} className="text-gray-300" />
+                          <Minus size={10} className="text-faint" />
                         )}
                         <span
                           className={
                             isCurrentQ
-                              ? "text-teal-700 font-medium"
+                              ? "font-medium text-ink"
                               : isAnswered
-                              ? "text-gray-500"
+                              ? "text-muted"
                               : isSkipped
-                              ? "text-amber-600"
-                              : "text-gray-400"
+                              ? "text-challenge"
+                              : "text-faint"
                           }
                         >
                           Question {qNum}
@@ -133,8 +129,8 @@ export default function InterviewTrackerPanel() {
       </div>
 
       {skippedCount > 0 && (
-        <div className="px-4 py-3 border-t border-gray-100">
-          <p className="text-xs text-amber-600">
+        <div className="border-t border-hairline pt-3">
+          <p className="text-xs text-challenge">
             {skippedCount} question{skippedCount > 1 ? "s" : ""} skipped — click
             to return
           </p>

@@ -59,18 +59,18 @@ export default function VersionHistoryPanel() {
 
   if (snapshots.length === 0) {
     return (
-      <div className="flex h-full flex-col">
-        <div className="border-b border-slate-200 px-4 py-3">
-          <h3 className="font-display text-sm text-slate-900">Version History</h3>
-          <p className="mt-1 text-xs text-slate-500">Create restore points and return to them later.</p>
+      <div className="flex flex-col">
+        <div className="border-b border-hairline pb-3">
+          <h3 className="font-serif text-[15px] text-ink">Version History</h3>
+          <p className="mt-1 text-xs text-muted">Create restore points and return to them later.</p>
         </div>
-        <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-          <p className="text-sm text-slate-500">
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+          <p className="text-sm text-muted">
             No snapshots yet. Create your first restore point before major edits.
           </p>
           <button
             onClick={onCreateSnapshot}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            className="mt-4 inline-flex items-center gap-1.5 border-b border-ink text-xs text-ink"
           >
             <Save size={12} />
             Create restore point
@@ -81,16 +81,16 @@ export default function VersionHistoryPanel() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-slate-200 px-4 py-3">
+    <div className="flex flex-col">
+      <div className="border-b border-hairline pb-3">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <h3 className="font-display text-sm text-slate-900">Version History</h3>
-            <p className="mt-1 text-xs text-slate-500">{snapshots.length} restore point(s) in this thread.</p>
+            <h3 className="font-serif text-[15px] text-ink">Version History</h3>
+            <p className="mt-1 text-xs text-muted">{snapshots.length} restore point(s) in this thread.</p>
           </div>
           <button
             onClick={onCreateSnapshot}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 border-b border-ink text-xs text-ink"
           >
             <Save size={12} />
             Snapshot
@@ -98,7 +98,7 @@ export default function VersionHistoryPanel() {
         </div>
       </div>
 
-      <div className="flex-1 space-y-2 overflow-y-auto p-4">
+      <div className="space-y-3 py-4">
         {snapshots.map((snapshot) => {
           const drafted = SECTION_ORDER.filter((section) =>
             Boolean(snapshot.state.proposalSections[section].draft)
@@ -107,17 +107,17 @@ export default function VersionHistoryPanel() {
             (section) => snapshot.state.proposalSections[section].approved
           ).length;
           return (
-            <div key={snapshot.id} className="rounded-xl border border-slate-200 bg-white p-3">
+            <div key={snapshot.id} className="border-b border-hairline pb-3 last:border-b-0">
               <div className="mb-1 flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold text-slate-800">{snapshot.label}</p>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                <p className="text-xs font-semibold text-ink">{snapshot.label}</p>
+                <span className="ui-label text-muted">
                   Phase {snapshot.phase}
                 </span>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted">
                 {snapshot.reason === "manual" ? "Manual" : "Auto"} snapshot
               </p>
-              <div className="mt-2 flex items-center gap-3 text-[11px] text-slate-500">
+              <div className="mt-2 flex items-center gap-3 text-[11px] text-faint">
                 <span className="inline-flex items-center gap-1">
                   <Clock3 size={11} />
                   {formatRelative(snapshot.createdAt)}
@@ -127,7 +127,7 @@ export default function VersionHistoryPanel() {
               </div>
               <button
                 onClick={() => onRestoreSnapshot(snapshot.id, snapshot.label)}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="mt-3 inline-flex items-center gap-1.5 border-b border-ink text-xs text-ink"
               >
                 <RotateCcw size={11} />
                 Restore

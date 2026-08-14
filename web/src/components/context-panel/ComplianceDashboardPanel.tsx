@@ -12,14 +12,14 @@ export default function ComplianceDashboardPanel({ onAction }: ComplianceDashboa
 
   if (!validation.lastRun) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center h-64">
-        <p className="text-sm text-gray-500 leading-relaxed mb-4">
+      <div className="flex h-64 flex-col items-center justify-center p-8 text-center">
+        <p className="mb-4 text-sm leading-relaxed text-muted">
           Compliance check will run after all sections are drafted. You can also
           run a partial check anytime to catch issues early.
         </p>
         <button
           onClick={() => onAction?.("/validate")}
-          className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors"
+          className="flex items-center gap-1.5 border-b border-ink text-sm text-ink"
         >
           <RefreshCw size={14} />
           Run Partial Check
@@ -50,54 +50,50 @@ export default function ComplianceDashboardPanel({ onAction }: ComplianceDashboa
   ]);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <h3 className="text-xs font-semibold text-gray-700 uppercase">
-          Compliance Dashboard
-        </h3>
+    <div className="flex flex-col">
+      <div className="flex items-center justify-between border-b border-hairline pb-3">
+        <h3 className="ui-label text-muted">Compliance Dashboard</h3>
         <button
           onClick={() => onAction?.("/validate")}
-          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+          className="flex items-center gap-1 text-xs text-muted transition-colors hover:text-ink"
         >
           <RefreshCw size={14} />
           Re-run
         </button>
       </div>
 
-      <div className="px-4 py-3 border-b border-gray-100">
-        <div className="flex gap-4 text-sm mb-2">
-          <span className="text-emerald-600 font-medium">
+      <div className="border-b border-hairline py-3">
+        <div className="mb-2 flex gap-4 text-sm">
+          <span className="font-medium text-learning">
             Passed: {validation.passed.length}
           </span>
-          <span className="text-red-600 font-medium">
+          <span className="font-medium text-blocker">
             Failed: {validation.failed.length}
           </span>
-          <span className="text-amber-600 font-medium">
+          <span className="font-medium text-challenge">
             Warnings: {validation.warnings.length}
           </span>
         </div>
-        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-hairline">
           <div
-            className="h-full bg-emerald-500 rounded-full transition-all"
+            className="h-full rounded-full bg-ink transition-all"
             style={{ width: `${passRate}%` }}
           />
         </div>
-        <p className="text-xs text-gray-400 mt-1">{Math.round(passRate)}% passing</p>
+        <p className="mt-1 text-xs text-faint">{Math.round(passRate)}% passing</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 space-y-4 py-4">
         {[...categories].map((cat) => {
           const catFailed = failedByCategory[cat] || [];
           const catWarnings = warningsByCategory[cat] || [];
 
           return (
             <div key={cat}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-semibold text-gray-600 uppercase">
-                  {cat}
-                </span>
+              <div className="mb-2 flex items-center gap-2">
+                <span className="ui-label text-muted">{cat}</span>
                 {catFailed.length > 0 && (
-                  <span className="text-xs text-red-500">
+                  <span className="text-xs text-blocker">
                     {catFailed.length} issue{catFailed.length > 1 ? "s" : ""}
                   </span>
                 )}
@@ -105,15 +101,15 @@ export default function ComplianceDashboardPanel({ onAction }: ComplianceDashboa
 
               <div className="space-y-1.5">
                 {catFailed.map((issue) => (
-                  <div key={issue.id} className="flex items-start gap-2 text-sm p-2 bg-red-50 rounded">
-                    <X size={12} className="text-red-500 mt-0.5 flex-shrink-0" />
+                  <div key={issue.id} className="flex items-start gap-2 border-s-2 border-blocker py-1 ps-3 text-sm">
+                    <X size={12} className="mt-0.5 flex-shrink-0 text-blocker" />
                     <div className="flex-1">
-                      <span className="font-mono text-xs text-red-600">{issue.id}</span>
-                      <p className="text-xs text-gray-600">{issue.description}</p>
+                      <span className="font-mono text-xs text-blocker">{issue.id}</span>
+                      <p className="text-xs text-body">{issue.description}</p>
                     </div>
                     <button
                       onClick={() => onAction?.(`fix:${issue.id}`)}
-                      className="text-xs text-blue-600 hover:underline flex-shrink-0"
+                      className="flex-shrink-0 border-b border-ink text-xs text-ink"
                     >
                       Fix
                     </button>
@@ -121,11 +117,11 @@ export default function ComplianceDashboardPanel({ onAction }: ComplianceDashboa
                 ))}
 
                 {catWarnings.map((issue) => (
-                  <div key={issue.id} className="flex items-start gap-2 text-sm p-2 bg-amber-50 rounded">
-                    <AlertTriangle size={12} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                  <div key={issue.id} className="flex items-start gap-2 border-s-2 border-challenge py-1 ps-3 text-sm">
+                    <AlertTriangle size={12} className="mt-0.5 flex-shrink-0 text-challenge" />
                     <div>
-                      <span className="font-mono text-xs text-amber-600">{issue.id}</span>
-                      <p className="text-xs text-gray-600">{issue.description}</p>
+                      <span className="font-mono text-xs text-challenge">{issue.id}</span>
+                      <p className="text-xs text-body">{issue.description}</p>
                     </div>
                   </div>
                 ))}
@@ -136,10 +132,10 @@ export default function ComplianceDashboardPanel({ onAction }: ComplianceDashboa
       </div>
 
       {validation.failed.length > 0 && (
-        <div className="px-4 py-3 border-t border-gray-100">
+        <div className="border-t border-hairline pt-3">
           <button
             onClick={() => onAction?.("fix-issues")}
-            className="w-full text-sm py-2 rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
+            className="w-full border-b border-blocker py-2 text-center text-sm text-blocker transition-colors hover:text-ink"
           >
             Fix All Issues
           </button>
