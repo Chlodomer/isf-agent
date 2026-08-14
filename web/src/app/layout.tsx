@@ -1,25 +1,21 @@
 import type { Metadata } from "next";
-import { Manrope, Sora } from "next/font/google";
+import { Manrope, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
+import FirstRunSplash from "@/components/shared/FirstRunSplash";
 
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],
 });
 
-const sora = Sora({
-  variable: "--font-sora",
+const sourceSerif = Source_Serif_4({
+  variable: "--font-source-serif",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   title: "Granite",
   description: "Granite helps prepare ISF grant proposals with guided workflows.",
-  icons: {
-    icon: "/granite-logo.png",
-    apple: "/granite-logo.png",
-    shortcut: "/granite-logo.png",
-  },
 };
 
 export default function RootLayout({
@@ -29,7 +25,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${manrope.variable} ${sora.variable} antialiased font-sans`}>
+      <body className={`${manrope.variable} ${sourceSerif.variable} antialiased font-sans`}>
+        <FirstRunSplash />
         {children}
       </body>
     </html>

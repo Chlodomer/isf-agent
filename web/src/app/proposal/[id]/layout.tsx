@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import { findOwnedThread } from "@/lib/user-data";
+import SignOutButton from "@/components/shared/SignOutButton";
 
 const LOCAL_THREAD_ID_PREFIX = "thread-";
 
@@ -52,24 +53,21 @@ export default async function ProposalLayout({
 
   return (
     <div className="min-h-screen lg:h-screen overflow-y-auto lg:overflow-hidden">
-      <div className="fixed right-3 top-3 z-[90] flex items-center gap-2 rounded-full border border-slate-300 bg-white/95 px-3 py-1.5 text-xs shadow-sm backdrop-blur-sm">
-        <span className="max-w-[220px] truncate text-slate-600">{session.user.email}</span>
+      {/* Positioned at end-16 (64px) so it clears the 48px right rail + hairline
+          border used at lg+ (see WorkspaceShell's right-side <nav>), and kept
+          below the Sheet overlay's z-40 scrim so an open work sheet renders on
+          top of it instead of floating this badge above sheet content. */}
+      <div className="fixed top-3 end-16 z-20 flex items-center gap-2 rounded-full border border-hairline-strong bg-surface/95 px-3 py-1.5 font-sans text-xs text-body shadow-[0_2px_8px_rgba(26,24,21,0.08)] backdrop-blur-sm">
+        <span className="max-w-[220px] truncate text-muted">{session.user.email}</span>
         {isAdmin && (
           <Link
             href={adminHref}
-            className="rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 font-medium text-slate-700 hover:bg-slate-200"
+            className="rounded-full border border-hairline-strong bg-canvas px-2 py-0.5 font-medium text-body transition-colors hover:bg-hairline"
           >
             Admin
           </Link>
         )}
-        <form action={handleSignOut}>
-          <button
-            type="submit"
-            className="rounded-full border border-slate-300 bg-white px-2 py-0.5 font-medium text-slate-700 hover:bg-slate-100"
-          >
-            Sign out
-          </button>
-        </form>
+        <SignOutButton action={handleSignOut} />
       </div>
       {children}
     </div>

@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import Logo from "@/components/shared/Logo";
 import { signInWithCredentials, signInWithLocalAdmin } from "./actions";
 
 interface SignInPageProps {
@@ -18,59 +18,55 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   const signUpUrl = `/sign-up?${new URLSearchParams({ callbackUrl }).toString()}`;
   const missingDatabaseConfig = !process.env.DATABASE_URL || !process.env.DIRECT_URL;
   const showLocalAdminShortcut =
-    process.env.NODE_ENV === "development" &&
-    (process.env.ENABLE_LOCAL_ADMIN_SHORTCUT === "true" || missingDatabaseConfig);
+    missingDatabaseConfig &&
+    (process.env.NODE_ENV === "development" ||
+      process.env.ENABLE_LOCAL_ADMIN_SHORTCUT === "true");
+  const isDev = process.env.NODE_ENV === "development";
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_8%_8%,rgba(186,136,86,0.22),transparent_38%),radial-gradient(circle_at_88%_10%,rgba(95,104,111,0.16),transparent_42%),linear-gradient(180deg,#f8f3eb_0%,#ece3d6_100%)] px-4 py-10">
-      <div className="mx-auto w-full max-w-md rounded-2xl border border-[#d8c8b2] bg-white/95 p-7 shadow-[0_30px_60px_-38px_rgba(47,41,36,0.5)]">
-        <div className="mb-4 flex items-center gap-3">
-          <Image
-            src="/granite-logo.png"
-            alt="Granite logo"
-            width={36}
-            height={36}
-            className="h-9 w-9 rounded-lg object-cover"
-          />
-          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#6a5642]">Granite</p>
+    <main className="min-h-screen bg-canvas flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md">
+        <div className="flex flex-col items-center">
+          <Logo size={64} />
+          <h1 className="mt-5 text-center font-serif text-4xl text-ink">Granite</h1>
+          <p className="mt-2 text-center font-sans text-[14px] text-muted">
+            ISF grant writing, thought through.
+          </p>
+          <p className="ui-label mt-8 text-center text-muted">Sign in</p>
         </div>
-        <h1 className="font-display text-2xl font-semibold text-[#2f2924]">Sign in</h1>
-        <p className="mt-2 text-sm text-[#675646]">
-          Use your researcher account to continue your saved projects and threads.
-        </p>
 
         {error && (
-          <div className="mt-4 rounded-lg border border-[#d7b48b] bg-[#fff4e8] px-3 py-2 text-sm text-[#7f5228]">
+          <div className="mt-6 rounded-[8px] border border-hairline-strong bg-surface px-4 py-3 font-sans text-[13.5px] text-blocker">
             {error}
           </div>
         )}
 
-        <form action={signInWithCredentials} className="mt-6 space-y-4">
+        <form action={signInWithCredentials} className="mt-5 space-y-5">
           <input type="hidden" name="callbackUrl" value={callbackUrl} />
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-[#524338]">Email</span>
+            <span className="ui-label text-muted mb-1 block">Email</span>
             <input
               required
               type="email"
               name="email"
               autoComplete="email"
               placeholder="name@university.edu"
-              className="w-full rounded-lg border border-[#d6c7b5] bg-white px-3 py-2.5 text-base text-[#2f2924] outline-none focus:border-[#ad8459] focus:ring-2 focus:ring-[#d8bb9a]/50"
+              className="w-full rounded-[8px] border border-hairline-strong bg-surface px-4 py-3.5 font-sans text-[15px] text-body placeholder:text-faint focus:border-teal focus:shadow-[0_0_0_3px_rgba(30,111,106,0.10)] outline-none"
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-[#524338]">Password</span>
+            <span className="ui-label text-muted mb-1 block">Password</span>
             <input
               required
               type="password"
               name="password"
               autoComplete="current-password"
-              className="w-full rounded-lg border border-[#d6c7b5] bg-white px-3 py-2.5 text-base text-[#2f2924] outline-none focus:border-[#ad8459] focus:ring-2 focus:ring-[#d8bb9a]/50"
+              className="w-full rounded-[8px] border border-hairline-strong bg-surface px-4 py-3.5 font-sans text-[15px] text-body placeholder:text-faint focus:border-teal focus:shadow-[0_0_0_3px_rgba(30,111,106,0.10)] outline-none"
             />
           </label>
           <button
             type="submit"
-            className="w-full rounded-lg bg-[#312a24] px-4 py-2.5 text-base font-semibold text-white transition-colors hover:bg-[#241f1b]"
+            className="w-full rounded-[8px] bg-ink py-3.5 font-sans text-[15px] text-canvas transition-opacity hover:opacity-90"
           >
             Continue
           </button>
@@ -80,21 +76,21 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
           <form action={signInWithLocalAdmin} className="mt-3">
             <button
               type="submit"
-              className="w-full rounded-lg border border-[#cfbea9] bg-[#fbf7f1] px-4 py-2.5 text-base font-semibold text-[#4a3d32] transition-colors hover:bg-[#f6efe4]"
+              className="w-full rounded-[8px] border border-hairline-strong py-3.5 font-sans text-[15px] text-body"
             >
-              Continue as local admin
+              {isDev ? "Continue as local admin" : "Enter demo workspace"}
             </button>
-            {missingDatabaseConfig && (
-              <p className="mt-2 text-xs text-[#766454]">
+            {missingDatabaseConfig && isDev && (
+              <p className="mt-2 font-sans text-[12px] text-muted">
                 Local fallback auth is active (no database config found).
               </p>
             )}
           </form>
         )}
 
-        <p className="mt-4 text-sm text-[#675646]">
+        <p className="mt-6 font-sans text-[13px] text-muted">
           Need an account?{" "}
-          <Link href={signUpUrl} className="font-semibold text-[#4d3d2f] underline underline-offset-2">
+          <Link href={signUpUrl} className="underline text-ink">
             Create one
           </Link>
         </p>

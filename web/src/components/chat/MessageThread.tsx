@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import type { ChatMessage } from "@/lib/types";
+import { Sparkles } from "lucide-react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import type { ChatMessage, Phase } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
 import ChallengeCard from "./messages/ChallengeCard";
 import InterviewQuestionBlock from "./messages/InterviewQuestionBlock";
@@ -12,20 +13,23 @@ import PhaseTransitionCard from "./messages/PhaseTransitionCard";
 import WelcomeCard from "./messages/WelcomeCard";
 import ResumeSessionCard from "./messages/ResumeSessionCard";
 import FileUploadCard from "./messages/FileUploadCard";
+import InlineActions from "./InlineActions";
+import BrandHero from "../shared/BrandHero";
 
 interface MessageThreadProps {
   messages: ChatMessage[];
   onAction: (action: string) => void;
   isLoading?: boolean;
+  phase?: Phase;
 }
 
 function TypingIndicator() {
   return (
     <div className="flex justify-start my-3">
-      <div className="flex items-center gap-1 rounded-2xl rounded-bl-md bg-[#efe5d8] px-4 py-3">
-        <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-[#b59472] [animation-delay:0ms]" />
-        <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-[#b59472] [animation-delay:150ms]" />
-        <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-[#b59472] [animation-delay:300ms]" />
+      <div className="flex items-center gap-1 rounded-2xl rounded-es-md bg-bubble px-4 py-3">
+        <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-faint [animation-delay:0ms]" />
+        <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-faint [animation-delay:150ms]" />
+        <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-faint [animation-delay:300ms]" />
       </div>
     </div>
   );
@@ -33,28 +37,37 @@ function TypingIndicator() {
 
 function TextMessage({ message }: { message: Extract<ChatMessage, { type: "text" }> }) {
   const isUser = message.role === "user";
-  return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"} my-3`}>
-      <div
-        className={`max-w-[88%] rounded-2xl px-4 py-3 text-base leading-relaxed ${
-          isUser
-            ? "rounded-br-md bg-[#8f6440] text-white"
-            : "rounded-bl-md bg-[#f1e8db] text-[#3f342b]"
-        }`}
-      >
-        <ReactMarkdown
-          components={{
-            p: ({ children }) => <p className="whitespace-pre-wrap">{children}</p>,
-            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-            em: ({ children }) => <em className="italic">{children}</em>,
-            ul: ({ children }) => <ul className="list-disc pl-5 space-y-1">{children}</ul>,
-            ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1">{children}</ol>,
-            li: ({ children }) => <li>{children}</li>,
-          }}
-        >
-          {message.content}
-        </ReactMarkdown>
+
+  const markdownComponents = {
+    p: ({ children }: { children?: ReactNode }) => (
+      <p className="whitespace-pre-wrap">{children}</p>
+    ),
+    strong: ({ children }: { children?: ReactNode }) => (
+      <strong className="font-semibold">{children}</strong>
+    ),
+    em: ({ children }: { children?: ReactNode }) => <em className="italic">{children}</em>,
+    ul: ({ children }: { children?: ReactNode }) => (
+      <ul className="list-disc ps-5 space-y-1">{children}</ul>
+    ),
+    ol: ({ children }: { children?: ReactNode }) => (
+      <ol className="list-decimal ps-5 space-y-1">{children}</ol>
+    ),
+    li: ({ children }: { children?: ReactNode }) => <li>{children}</li>,
+  };
+
+  if (isUser) {
+    return (
+      <div className="flex justify-end my-3">
+        <div className="max-w-[70%] self-end rounded-[16px] rounded-ee-[4px] bg-bubble px-4 py-2.5 font-sans text-[15px] text-body">
+          <ReactMarkdown components={markdownComponents}>{message.content}</ReactMarkdown>
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="my-3 font-serif text-[17px] leading-relaxed text-ink">
+      <ReactMarkdown components={markdownComponents}>{message.content}</ReactMarkdown>
     </div>
   );
 }
@@ -76,7 +89,7 @@ function renderMessage(message: ChatMessage, onAction: (action: string) => void)
     case "phase_transition":
       return <PhaseTransitionCard key={message.id} {...message} onAction={onAction} />;
     case "welcome":
-      return <WelcomeCard key={message.id} onAction={onAction} />;
+      return <WelcomeCard key={message.id} />;
     case "resume_session":
       return <ResumeSessionCard key={message.id} {...message} onAction={onAction} />;
     case "file_upload":
@@ -86,13 +99,22 @@ function renderMessage(message: ChatMessage, onAction: (action: string) => void)
   }
 }
 
-export default function MessageThread({ messages, onAction, isLoading }: MessageThreadProps) {
+export default function MessageThread({ messages, onAction, isLoading, phase }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const hiddenWelcomeMessages = useMemo(
+    () => messages.filter((message) => message.type === "welcome"),
+    [messages]
+  );
   const hasSubstantiveHistory = messages.some(
     (message) => message.type !== "welcome" && message.type !== "file_upload"
   );
+  const isFreshThread =
+    messages.length > 0 && messages.every((message) => message.type === "welcome");
+
   const shouldAutoScrollToBottom = hasSubstantiveHistory || Boolean(isLoading);
-  const visibleMessages = messages;
+  const visibleMessages = hasSubstantiveHistory
+    ? messages.filter((message) => message.type !== "welcome")
+    : messages;
 
   // Track the last message's content length to auto-scroll during streaming
   const lastMsg = visibleMessages[visibleMessages.length - 1];
@@ -105,13 +127,32 @@ export default function MessageThread({ messages, onAction, isLoading }: Message
   }, [isLoading, shouldAutoScrollToBottom, visibleMessages.length, lastContentLength]);
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto bg-gradient-to-b from-[#fdf9f3] via-[#faf4ec] to-[#f4ecdf] px-4 pb-4 pt-3">
+    <div className="flex-1 min-h-0 w-full max-w-[840px] mx-auto overflow-y-auto px-4 pb-4 pt-2">
+      {isFreshThread && (
+        <div className="pt-[10vh] pb-8">
+          <BrandHero />
+        </div>
+      )}
+      {hasSubstantiveHistory && hiddenWelcomeMessages.length > 0 && (
+        <details className="group mb-2">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-hairline-strong bg-surface px-3 py-1 text-xs font-medium text-body transition-colors hover:bg-bubble [&::-webkit-details-marker]:hidden">
+            <Sparkles size={12} />
+            Show welcome message
+          </summary>
+          <div className="mt-2 space-y-2">
+            {hiddenWelcomeMessages.map((message) => renderMessage(message, onAction))}
+          </div>
+        </details>
+      )}
       {visibleMessages.length === 0 && (
-        <div className="flex h-full items-center justify-center text-base text-[#766554]">
+        <div className="flex h-full items-center justify-center text-base text-muted">
           Starting your grant writing session...
         </div>
       )}
       {visibleMessages.map((msg) => renderMessage(msg, onAction))}
+      {phase !== undefined && !isLoading && lastMsg?.role === "agent" && (
+        <InlineActions phase={phase} onAction={onAction} />
+      )}
       {isLoading &&
         (() => {
           const last = visibleMessages[visibleMessages.length - 1];

@@ -9,7 +9,11 @@ interface ChatInputProps {
   disabled?: boolean;
 }
 
-export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputProps) {
+export default function ChatInput({
+  onSend,
+  onFileUpload,
+  disabled,
+}: ChatInputProps) {
   const [value, setValue] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -55,26 +59,30 @@ export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputP
 
   return (
     <div
-      className="relative border-t border-[#dccdb9] bg-gradient-to-r from-white via-[#faf4ec] to-[#f3ece2]"
+      className="relative mx-auto w-full max-w-[840px] px-4 pb-4 pt-2"
       onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
       onDragLeave={() => setIsDragOver(false)}
       onDrop={handleDrop}
     >
       {isDragOver && (
-        <div className="absolute inset-0 z-10 m-1 flex items-center justify-center rounded-lg border-2 border-dashed border-[#c9ae90] bg-[#fff2e0]/90">
-          <p className="text-base font-medium text-[#7a5738]">
+        <div className="absolute inset-4 z-10 flex items-center justify-center rounded-[24px] border-2 border-dashed border-hairline-strong bg-surface/95">
+          <p className="font-sans text-[15px] font-medium text-ink">
             Drop your proposal, CV, or review file here
           </p>
         </div>
       )}
 
-      <div className="flex items-end gap-2 p-3">
+      <div
+        data-tour="composer"
+        className="flex items-end gap-2 rounded-[24px] border border-hairline-strong bg-surface px-5 py-3.5 focus-within:border-teal focus-within:shadow-[0_0_0_3px_rgba(30,111,106,0.10)]"
+      >
         <button
+          type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="flex-shrink-0 rounded-lg p-2.5 text-[#8e7a65] transition-colors hover:bg-[#f3e9db] hover:text-[#665241]"
+          className="flex-shrink-0 rounded-full p-1.5 text-muted transition-colors hover:text-ink"
           aria-label="Attach file"
         >
-          <Paperclip size={20} />
+          <Paperclip size={18} />
         </button>
         <input
           ref={fileInputRef}
@@ -91,24 +99,21 @@ export default function ChatInput({ onSend, onFileUpload, disabled }: ChatInputP
           value={value}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
-          placeholder="Ask in plain language (for example: Help me improve this section)..."
+          placeholder="Reply to Granite…"
           disabled={disabled}
           rows={1}
-          className="flex-1 resize-none rounded-lg border border-[#d8c9b6] bg-[#fdf8f1] px-4 py-3 text-base focus:border-[#ab7e52] focus:outline-none focus:ring-2 focus:ring-[#d6b695]/50 disabled:opacity-50"
+          className="flex-1 resize-none bg-transparent font-sans text-[15px] text-body placeholder:text-faint focus:outline-none disabled:opacity-50"
         />
 
         <button
+          type="button"
           onClick={handleSubmit}
           disabled={!value.trim() || disabled}
-          className="flex-shrink-0 rounded-lg bg-[#986c43] p-2.5 text-white transition-colors hover:bg-[#845a38] disabled:cursor-not-allowed disabled:opacity-30"
+          className="flex-shrink-0 rounded-full bg-ink p-1.5 text-surface transition-colors disabled:cursor-not-allowed disabled:opacity-30"
           aria-label="Send message"
         >
-          <ArrowUp size={20} />
+          <ArrowUp size={18} />
         </button>
-      </div>
-
-      <div className="px-4 pb-3 text-sm text-[#756451]">
-        No special commands required. Just describe what you need.
       </div>
     </div>
   );

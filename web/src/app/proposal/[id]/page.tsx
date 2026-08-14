@@ -3,10 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useProposalStore } from "@/lib/store";
 import { DEMO_MESSAGES } from "@/lib/demo-data";
-import LeftRail from "@/components/left-rail/LeftRail";
-import MainChat from "@/components/chat/MainChat";
-import ContextPanel from "@/components/context-panel/ContextPanel";
-import ThreadColumn, { type ThreadSummary } from "@/components/threads/ThreadColumn";
+import MainChat, { type StreamFailure } from "@/components/chat/MainChat";
+import WorkspaceShell from "@/components/shell/WorkspaceShell";
+import JourneySheet from "@/components/shell/JourneySheet";
+import TourOverlay from "@/components/shell/TourOverlay";
+import WorkSheets from "@/components/context-panel/WorkSheets";
+import ThreadsSheet from "@/components/threads/ThreadsSheet";
+import type { ThreadSummary } from "@/components/threads/ThreadColumn";
 import OnboardingExperience from "@/components/onboarding/OnboardingExperience";
 import type { OnboardingProfile } from "@/components/onboarding/OnboardingExperience";
 import {
@@ -14,12 +17,14 @@ import {
   SECTION_LABELS,
   TOTAL_INTERVIEW_QUESTIONS,
   type ChatMessage,
+  type ContextTab,
   type Phase,
   type SectionName,
   type VersionSnapshot,
 } from "@/lib/types";
 import { buildLocalAgentReply } from "@/lib/local-agent";
 import { streamAssistantReply } from "@/lib/chat-backend";
+import { historyBeforePrompt, scrubFailedReplies } from "@/lib/thread-hygiene";
 import { runComplianceValidation } from "@/lib/compliance";
 import { buildReadinessSnapshot } from "@/lib/readiness";
 import { useChatPersistence } from "@/lib/use-chat-persistence";
@@ -31,14 +36,12 @@ import {
   phaseToContextTab,
 } from "@/lib/workflow-sync";
 import ChatSettingsModal from "@/components/settings/ChatSettingsModal";
-import { Eye } from "lucide-react";
 import { useParams } from "next/navigation";
 
 const ONBOARDING_STORAGE_KEY = "isf.onboarding.completed";
 const ONBOARDING_PROFILE_KEY = "isf.onboarding.profile";
 const THREADS_STORAGE_KEY = "isf.chat.threads.v1";
 const ACTIVE_THREAD_STORAGE_KEY = "isf.chat.active-thread.v1";
-const THREADS_COLLAPSED_STORAGE_KEY = "isf.chat.threads-collapsed.v1";
 type OnboardingStatus = "checking" | "active" | "done";
 type ThreadTitleOrigin = "auto" | "manual";
 
@@ -58,6 +61,10 @@ function createWelcomeMessage(): ChatMessage {
     type: "welcome",
     role: "agent",
   };
+}
+
+function createClearedThreadMessages(): ChatMessage[] {
+  return [createWelcomeMessage()];
 }
 
 function createThreadId(): string {
@@ -204,52 +211,6 @@ function deriveThreadSnippet(messages: ChatMessage[]): string {
   return snippet.length > 90 ? `${snippet.slice(0, 87)}...` : snippet;
 }
 
-function hasSubstantiveThreadHistory(messages: ChatMessage[]): boolean {
-  return messages.some((message) => message.type !== "welcome");
-}
-
-function deriveThreadRecap(messages: ChatMessage[]): string | null {
-  if (!hasSubstantiveThreadHistory(messages)) return null;
-
-  const textMessages = messages.filter(
-    (message): message is Extract<ChatMessage, { type: "text" }> => message.type === "text"
-  );
-
-  const userTexts = textMessages
-    .filter((message) => message.role === "user")
-    .map((message) => message.content);
-  const agentTexts = textMessages
-    .filter((message) => message.role === "agent")
-    .map((message) => message.content);
-
-  const normalize = (value: string, maxLength: number) => {
-    const compact = value.trim().replace(/\s+/g, " ");
-    return compact.length > maxLength ? `${compact.slice(0, maxLength - 3)}...` : compact;
-  };
-
-  if (userTexts.length === 0 && agentTexts.length === 0) {
-    const nonTextCount = messages.filter((message) => message.type !== "welcome").length;
-    return `This thread includes ${nonTextCount} workflow updates. Continue from the latest step in the chat.`;
-  }
-
-  const openingUserMessage = userTexts[0];
-  const latestRelevant = agentTexts.at(-1) ?? userTexts.at(-1) ?? null;
-
-  if (!openingUserMessage) {
-    return latestRelevant
-      ? `Latest discussion point: ${normalize(latestRelevant, 220)}`
-      : "Continue from where this thread last paused.";
-  }
-
-  const opening = normalize(openingUserMessage, 150);
-  if (!latestRelevant || latestRelevant === openingUserMessage) {
-    return `Primary topic: ${opening}`;
-  }
-
-  const latest = normalize(latestRelevant, 170);
-  return `Primary topic: ${opening} Latest point: ${latest}`;
-}
-
 function downloadJsonFile(filename: string, payload: unknown) {
   const blob = new Blob([JSON.stringify(payload, null, 2)], {
     type: "application/json",
@@ -276,6 +237,7 @@ export default function ProposalWorkspace() {
   const addMessage = useProposalStore((s) => s.addMessage);
   const setMessages = useProposalStore((s) => s.setMessages);
   const updateMessage = useProposalStore((s) => s.updateMessage);
+  const removeMessage = useProposalStore((s) => s.removeMessage);
   const openContextPanel = useProposalStore((s) => s.openContextPanel);
   const toggleContextPanel = useProposalStore((s) => s.toggleContextPanel);
   const researcherInfo = useProposalStore((s) => s.researcherInfo);
@@ -299,13 +261,19 @@ export default function ProposalWorkspace() {
   const messages = useProposalStore((s) => s.messages);
   const [threads, setThreads] = useState<PersistedThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
-  const [threadsCollapsed, setThreadsCollapsed] = useState(false);
   const [threadsLoaded, setThreadsLoaded] = useState(false);
   const [demoLoaded, setDemoLoaded] = useState(false);
   const actionStreamRef = useRef("");
   const processedWorkflowMessageIdsRef = useRef<Set<string>>(new Set());
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus>("checking");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+  const [streamFailure, setStreamFailure] = useState<StreamFailure | null>(null);
+
+  const activeTitle =
+    threads.find((t) => t.id === activeThreadId)?.title ?? "New thread";
+  const { consent: persistenceConsent, updateConsent: updateConsentBase } =
+    useChatPersistence(activeThreadId, activeTitle);
 
   useEffect(() => {
     processedWorkflowMessageIdsRef.current.clear();
@@ -360,10 +328,12 @@ export default function ProposalWorkspace() {
             parsedThreads = candidate
               .filter((thread) => typeof thread.id === "string")
               .map((thread) => {
-                const normalizedMessages =
+                const scrubbedMessages =
                   Array.isArray(thread.messages) && thread.messages.length > 0
-                    ? thread.messages
-                    : [createWelcomeMessage()];
+                    ? scrubFailedReplies(thread.messages)
+                    : [];
+                const normalizedMessages =
+                  scrubbedMessages.length > 0 ? scrubbedMessages : [createWelcomeMessage()];
                 const normalizedTitle = thread.title || "New thread";
                 const normalizedSnapshots = Array.isArray(thread.versionSnapshots)
                   ? thread.versionSnapshots
@@ -390,12 +360,8 @@ export default function ProposalWorkspace() {
       }
 
       const persistedActive = window.localStorage.getItem(ACTIVE_THREAD_STORAGE_KEY);
-      const persistedCollapsed =
-        window.localStorage.getItem(THREADS_COLLAPSED_STORAGE_KEY) === "true";
       const initialThreadId = routeThreadId || persistedActive || createThreadId();
       const existing = parsedThreads.find((thread) => thread.id === initialThreadId);
-
-      setThreadsCollapsed(persistedCollapsed);
 
       if (existing) {
         resetWorkspaceForNewThread();
@@ -430,6 +396,7 @@ export default function ProposalWorkspace() {
 
   useEffect(() => {
     if (!threadsLoaded || !activeThreadId) return;
+    if (persistenceConsent === false) return; // stealth mode: don't fold updates into thread state
     const timer = window.setTimeout(() => {
       setThreads((current) => {
         const existing = current.find((thread) => thread.id === activeThreadId);
@@ -470,62 +437,56 @@ export default function ProposalWorkspace() {
 
   useEffect(() => {
     if (!threadsLoaded) return;
+    if (persistenceConsent === false) return; // stealth mode: nothing is written
 
     try {
       window.localStorage.setItem(THREADS_STORAGE_KEY, JSON.stringify(threads));
       if (activeThreadId) {
         window.localStorage.setItem(ACTIVE_THREAD_STORAGE_KEY, activeThreadId);
       }
-      window.localStorage.setItem(
-        THREADS_COLLAPSED_STORAGE_KEY,
-        String(threadsCollapsed)
-      );
     } catch {
       // no-op: local persistence is best-effort
     }
-  }, [activeThreadId, threads, threadsCollapsed, threadsLoaded]);
+  }, [activeThreadId, persistenceConsent, threads, threadsLoaded]);
 
-  const activeTitle =
-    threads.find((t) => t.id === activeThreadId)?.title ?? "New thread";
-  const { consent: persistenceConsent, updateConsent, showBanner, dismissBanner } =
-    useChatPersistence(activeThreadId, activeTitle);
-
-  const handleAcceptPersistence = useCallback(async () => {
-    const success = await updateConsent(true);
-    if (success && threads.length > 0) {
-      // Bulk-sync existing localStorage threads to DB
-      void fetch("/api/threads/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          threads: threads.map((t) => ({
-            clientThreadId: t.id,
-            title: t.title,
-            titleOrigin: t.titleOrigin ?? "auto",
-            messages: t.messages
-              .filter((m): m is Extract<ChatMessage, { type: "text" }> => m.type === "text")
-              .map((m) => ({
-                role: m.role === "agent" ? "assistant" : "user",
-                type: m.type,
-                content: m.content,
-              })),
-          })),
-        }),
-      });
-      addMessage({
-        id: `persistence-${Date.now()}`,
-        type: "text",
-        role: "agent",
-        content:
-          "Chat history saving is now enabled. Your existing conversations have been saved to your account.",
-      });
-    }
-    dismissBanner();
-  }, [addMessage, dismissBanner, threads, updateConsent]);
-
-  const handleDismissBanner = useCallback(() => {
-    dismissBanner();
-  }, [dismissBanner]);
+  // Wraps updateConsent so that whenever consent flips to true (stealth mode
+  // turned off), existing localStorage threads are bulk-synced to the server.
+  // Degrades gracefully: if /api/threads/sync is unavailable (no DB), the
+  // fire-and-forget fetch simply fails silently and local state is unaffected.
+  const handleUpdateConsent = useCallback(
+    async (newConsent: boolean) => {
+      const success = await updateConsentBase(newConsent);
+      if (newConsent && threads.length > 0) {
+        void fetch("/api/threads/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            threads: threads.map((t) => ({
+              clientThreadId: t.id,
+              title: t.title,
+              titleOrigin: t.titleOrigin ?? "auto",
+              messages: t.messages
+                .filter((m): m is Extract<ChatMessage, { type: "text" }> => m.type === "text")
+                .map((m) => ({
+                  role: m.role === "agent" ? "assistant" : "user",
+                  type: m.type,
+                  content: m.content,
+                })),
+            })),
+          }),
+        });
+        addMessage({
+          id: `persistence-${Date.now()}`,
+          type: "text",
+          role: "agent",
+          content:
+            "Chat history saving is now enabled. Your existing conversations have been saved to your account.",
+        });
+      }
+      return success;
+    },
+    [addMessage, threads, updateConsentBase]
+  );
 
   const loadDemo = useCallback(() => {
     if (demoLoaded) return;
@@ -578,18 +539,51 @@ export default function ProposalWorkspace() {
     [resetWorkspaceForNewThread, setMessages, setVersionHistory, threads]
   );
 
+  const handleClearConversation = useCallback(() => {
+    const clearedMessages = createClearedThreadMessages();
+    const nowIso = new Date().toISOString();
+
+    resetWorkspaceForNewThread();
+    processedWorkflowMessageIdsRef.current.clear();
+    setMessages(clearedMessages);
+    setVersionHistory([]);
+    setDemoLoaded(false);
+
+    if (!activeThreadId) {
+      const threadId = createThreadId();
+      setThreads((current) => [
+        {
+          id: threadId,
+          title: "New thread",
+          titleOrigin: "auto",
+          updatedAt: nowIso,
+          messages: clearedMessages,
+          versionSnapshots: [],
+        },
+        ...current,
+      ]);
+      setActiveThreadId(threadId);
+      return;
+    }
+
+    setThreads((current) =>
+      current.map((thread) =>
+        thread.id === activeThreadId
+          ? {
+              ...thread,
+              updatedAt: nowIso,
+              messages: clearedMessages,
+              versionSnapshots: [],
+              archivedAt: null,
+            }
+          : thread
+      )
+    );
+  }, [activeThreadId, resetWorkspaceForNewThread, setMessages, setVersionHistory]);
+
   const handleCreateThread = useCallback(() => {
     const threadId = createThreadId();
-    const starterMessages: ChatMessage[] = [
-      createWelcomeMessage(),
-      {
-        id: `fresh-start-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-        type: "text",
-        role: "agent",
-        content:
-          "Started a fresh proposal workspace. Share your project summary to begin the interview flow.",
-      },
-    ];
+    const starterMessages = createClearedThreadMessages();
     const created: PersistedThread = {
       id: threadId,
       title: "New thread",
@@ -685,10 +679,6 @@ export default function ProposalWorkspace() {
 
   const handleEmptyTrash = useCallback(() => {
     setThreads((current) => current.filter((thread) => !thread.archivedAt));
-  }, []);
-
-  const handleToggleThreadsCollapsed = useCallback(() => {
-    setThreadsCollapsed((current) => !current);
   }, []);
 
   const completeOnboarding = useCallback(
@@ -803,6 +793,66 @@ export default function ProposalWorkspace() {
     }
   }, [interview, learnings, phase, proposalSections, requirements.fetched, setPhase, validation]);
 
+  const runActionAssistantStream = useCallback(
+    (content: string, history: ChatMessage[]) => {
+      const assistantMsgId = `action-assistant-${Date.now()}`;
+      actionStreamRef.current = "";
+      addMessage({
+        id: assistantMsgId,
+        type: "text",
+        role: "agent",
+        content: "",
+      });
+
+      let rafPending = false;
+
+      void streamAssistantReply(
+        history,
+        content,
+        conversationContext(),
+        (token) => {
+          actionStreamRef.current += token;
+          if (!rafPending) {
+            rafPending = true;
+            requestAnimationFrame(() => {
+              rafPending = false;
+              updateMessage(assistantMsgId, actionStreamRef.current);
+            });
+          }
+        },
+        () => {
+          updateMessage(assistantMsgId, actionStreamRef.current);
+          if (actionStreamRef.current.trim().length > 0) {
+            syncAssistantReplyToWorkspace(content, actionStreamRef.current);
+          }
+          setStreamFailure(null);
+        },
+        (error) => {
+          if (actionStreamRef.current.length === 0) {
+            removeMessage(assistantMsgId);
+            setStreamFailure({ prompt: content, message: error, source: "action" });
+          }
+        },
+      );
+    },
+    [addMessage, conversationContext, removeMessage, syncAssistantReplyToWorkspace, updateMessage]
+  );
+
+  const handleDismissStreamFailure = useCallback(() => {
+    setStreamFailure(null);
+  }, []);
+
+  const handleStreamFailureFromChat = useCallback((prompt: string, message: string) => {
+    setStreamFailure({ prompt, message, source: "chat" });
+  }, []);
+
+  const handleRetryActionFailure = useCallback(() => {
+    if (!streamFailure || streamFailure.source !== "action") return;
+    const prompt = streamFailure.prompt;
+    setStreamFailure(null);
+    runActionAssistantStream(prompt, historyBeforePrompt(messages, prompt));
+  }, [messages, runActionAssistantStream, streamFailure]);
+
   const handleAction = useCallback(
     (action: string) => {
       if (action.startsWith("go-phase:")) {
@@ -810,6 +860,12 @@ export default function ProposalWorkspace() {
         if (Number.isInteger(maybePhase) && maybePhase >= 1 && maybePhase <= 7) {
           handlePhaseClick(maybePhase as Phase);
         }
+        return;
+      }
+
+      if (action === "start-tour" || action === "/tour") {
+        if (contextPanelOpen) toggleContextPanel();
+        setTourOpen(true);
         return;
       }
 
@@ -887,6 +943,12 @@ export default function ProposalWorkspace() {
 
       if (action === "open-settings") {
         setSettingsOpen(true);
+        return;
+      } else if (action === "load-demo") {
+        loadDemo();
+        return;
+      } else if (action === "clear-conversation") {
+        handleClearConversation();
         return;
       } else if (action === "show-welcome" || action === "welcome" || action === "/welcome") {
         addMessage(createWelcomeMessage());
@@ -1111,55 +1173,19 @@ export default function ProposalWorkspace() {
           return;
         }
 
-        const assistantMsgId = `action-assistant-${Date.now()}`;
-        actionStreamRef.current = "";
-        addMessage({
-          id: assistantMsgId,
-          type: "text",
-          role: "agent",
-          content: "",
-        });
-
-        let rafPending = false;
-
-        void streamAssistantReply(
-          messages,
-          content,
-          conversationContext(),
-          (token) => {
-            actionStreamRef.current += token;
-            if (!rafPending) {
-              rafPending = true;
-              requestAnimationFrame(() => {
-                rafPending = false;
-                updateMessage(assistantMsgId, actionStreamRef.current);
-              });
-            }
-          },
-          () => {
-            updateMessage(assistantMsgId, actionStreamRef.current);
-            if (actionStreamRef.current.trim().length > 0) {
-              syncAssistantReplyToWorkspace(content, actionStreamRef.current);
-            }
-          },
-          (error) => {
-            if (actionStreamRef.current.length === 0) {
-              updateMessage(assistantMsgId, `I couldn't complete the request: ${error}`);
-            }
-          },
-        );
+        runActionAssistantStream(content, messages);
       }
     },
     [
       addMessage,
       conversationContext,
       handleCreateThread,
+      runActionAssistantStream,
+      handleClearConversation,
       handlePhaseClick,
       messages,
       openContextPanel,
       toggleContextPanel,
-      updateMessage,
-      syncAssistantReplyToWorkspace,
       phase,
       projectInfo,
       proposalSections,
@@ -1172,6 +1198,7 @@ export default function ProposalWorkspace() {
       activeContextTab,
       activeThreadId,
       contextPanelOpen,
+      loadDemo,
       threads,
       validation,
       setRequirementsFetched,
@@ -1181,8 +1208,8 @@ export default function ProposalWorkspace() {
 
   if (onboardingStatus === "checking") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#f8f4ee_0%,#efe9df_100%)]">
-        <p className="text-sm font-medium text-[#6d5841]">Loading workspace...</p>
+      <div className="flex min-h-screen items-center justify-center bg-canvas">
+        <p className="text-sm font-medium text-muted">Loading workspace...</p>
       </div>
     );
   }
@@ -1212,59 +1239,85 @@ export default function ProposalWorkspace() {
       archivedAt: thread.archivedAt,
     }));
 
-  const activeThreadTitle =
-    threads.find((thread) => thread.id === activeThreadId)?.title ?? "Current thread";
-  const activeThreadRecap = deriveThreadRecap(messages);
+  const answered = deriveInterviewAnsweredCount(interview);
+  const nextApprovable = getNextApprovableSection(proposalSections);
+  const activitySummary =
+    phase === 4
+      ? `${answered} of ${TOTAL_INTERVIEW_QUESTIONS} questions`
+      : phase >= 5 && nextApprovable
+        ? SECTION_LABELS[nextApprovable]
+        : null;
+
+  const closeSheet = () => {
+    if (contextPanelOpen) toggleContextPanel();
+  };
 
   return (
-    <div className="relative flex h-screen flex-col gap-3 bg-transparent p-2 lg:flex-row lg:p-3">
-      <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_20%_20%,rgba(186,136,86,0.13),transparent_45%),radial-gradient(circle_at_78%_18%,rgba(120,110,96,0.11),transparent_42%),radial-gradient(circle_at_30%_84%,rgba(92,102,114,0.10),transparent_44%)]" />
-      <div className="relative z-10 contents">
-        <LeftRail onPhaseClick={handlePhaseClick} onAction={handleAction} />
-        <ThreadColumn
-          threads={activeThreadSummaries}
-          archivedThreads={archivedThreadSummaries}
-          activeThreadId={activeThreadId}
-          collapsed={threadsCollapsed}
-          onSelectThread={handleSelectThread}
-          onCreateThread={handleCreateThread}
-          onToggleCollapsed={handleToggleThreadsCollapsed}
-          onRenameThread={handleRenameThread}
-          onDeleteThread={handleDeleteThread}
-          onRestoreThread={handleRestoreThread}
-          onPermanentDelete={handlePermanentDeleteThread}
-          onEmptyTrash={handleEmptyTrash}
-        />
+    <>
+      <WorkspaceShell
+        onOpenSheet={(tab) => {
+          const normalize = (t: ContextTab) => (t === "operations" ? "journey" : t);
+          if (contextPanelOpen && normalize(activeContextTab) === normalize(tab)) {
+            toggleContextPanel();
+          } else {
+            openContextPanel(tab);
+          }
+        }}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onUpload={() => handleAction("upload-first")}
+        activitySummary={activitySummary}
+        activeTab={contextPanelOpen ? activeContextTab : null}
+      >
         <MainChat
           onAction={handleAction}
           onAssistantReply={syncAssistantReplyToWorkspace}
-          activeThreadTitle={activeThreadTitle}
-          activeThreadRecap={activeThreadRecap}
-          showPersistenceBanner={showBanner}
-          onAcceptPersistence={handleAcceptPersistence}
-          onDismissPersistence={handleDismissBanner}
+          stealthMode={persistenceConsent === false}
+          streamFailure={streamFailure}
+          onStreamFailure={handleStreamFailureFromChat}
+          onRetryFailure={handleRetryActionFailure}
+          onDismissFailure={handleDismissStreamFailure}
         />
-        {contextPanelOpen && <ContextPanel onAction={handleAction} />}
-      </div>
+
+        {contextPanelOpen && (activeContextTab === "journey" || activeContextTab === "operations") && (
+          <JourneySheet onClose={closeSheet} onAction={handleAction} />
+        )}
+        {contextPanelOpen && activeContextTab === "threads" && (
+          <ThreadsSheet
+            threads={activeThreadSummaries}
+            archivedThreads={archivedThreadSummaries}
+            activeThreadId={activeThreadId}
+            onSelectThread={(id) => {
+              handleSelectThread(id);
+              closeSheet();
+            }}
+            onCreateThread={() => {
+              handleCreateThread();
+              closeSheet();
+            }}
+            onRenameThread={handleRenameThread}
+            onDeleteThread={handleDeleteThread}
+            onRestoreThread={handleRestoreThread}
+            onPermanentDelete={handlePermanentDeleteThread}
+            onEmptyTrash={handleEmptyTrash}
+            onClearConversation={() => {
+              handleClearConversation();
+              closeSheet();
+            }}
+            onClose={closeSheet}
+          />
+        )}
+        <WorkSheets onAction={handleAction} onClose={closeSheet} />
+        {tourOpen && <TourOverlay onClose={() => setTourOpen(false)} />}
+      </WorkspaceShell>
 
       {settingsOpen && (
         <ChatSettingsModal
           consent={persistenceConsent}
-          onUpdateConsent={updateConsent}
+          onUpdateConsent={handleUpdateConsent}
           onClose={() => setSettingsOpen(false)}
+          onAction={handleAction}
         />
       )}
-
-      {/* Demo mode toggle */}
-      {!demoLoaded && (
-        <button
-          onClick={loadDemo}
-          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-[#312a24] px-4 py-2 text-sm text-white shadow-lg transition-colors hover:bg-[#241f1b]"
-        >
-          <Eye size={16} />
-          Load Demo Flow
-        </button>
-      )}
-    </div>
+    </>
   );
 }

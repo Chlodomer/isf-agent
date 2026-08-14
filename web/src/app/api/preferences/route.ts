@@ -8,9 +8,10 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  // Local-dev fallback user has no DB record
+  // Local-dev fallback user has no DB record; null lets the client apply its
+  // default (history on).
   if (session.user.id === "local-dev-admin") {
-    return NextResponse.json({ chatPersistenceConsent: false });
+    return NextResponse.json({ chatPersistenceConsent: null });
   }
 
   const user = await prisma.user.findUnique({
@@ -33,18 +34,23 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  if (session.user.id === "local-dev-admin") {
-    return NextResponse.json(
-      { error: "Preferences are not available in local-dev mode." },
-      { status: 400 }
-    );
-  }
-
   let body: { chatPersistenceConsent?: boolean };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
+  }
+
+  // Fallback user has no DB row: acknowledge the change so the client's
+  // session-local setting stands, without attempting a write.
+  if (session.user.id === "local-dev-admin") {
+    if (typeof body.chatPersistenceConsent !== "boolean") {
+      return NextResponse.json(
+        { error: "chatPersistenceConsent must be a boolean." },
+        { status: 400 }
+      );
+    }
+    return NextResponse.json({ chatPersistenceConsent: body.chatPersistenceConsent });
   }
 
   if (typeof body.chatPersistenceConsent !== "boolean") {

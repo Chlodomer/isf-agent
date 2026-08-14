@@ -1,10 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useProposalStore } from "./store";
 import type { ChatMessage } from "./types";
-
-const BANNER_DISMISSED_KEY = "isf.persistence.banner.dismissed";
 
 async function saveMessageToServer(
   threadId: string,
@@ -40,14 +38,6 @@ export function useChatPersistence(
   const messages = useProposalStore((s) => s.messages);
   const savedCountRef = useRef(0);
   const prevThreadIdRef = useRef<string | null>(null);
-  const [bannerDismissed, setBannerDismissed] = useState(() => {
-    if (typeof window === "undefined") return true;
-    try {
-      return window.localStorage.getItem(BANNER_DISMISSED_KEY) === "true";
-    } catch {
-      return false;
-    }
-  });
 
   // Reset saved count when thread changes
   useEffect(() => {
@@ -57,27 +47,30 @@ export function useChatPersistence(
     }
   }, [threadId]);
 
-  // Load consent preference on mount
+  // Load consent preference on mount. Default to true (history saved) when
+  // the stored value is null/absent — stealth mode (false) must be an
+  // explicit opt-out. If the preferences endpoint is unavailable (no DB),
+  // degrade gracefully to the same default rather than surfacing an error.
   useEffect(() => {
     async function loadConsent() {
       try {
         const res = await fetch("/api/preferences");
         if (res.ok) {
           const data = await res.json();
-          setConsent(data.chatPersistenceConsent ?? false);
+          setConsent(data.chatPersistenceConsent ?? true);
         } else {
-          setConsent(false);
+          setConsent(true);
         }
       } catch {
-        setConsent(false);
+        setConsent(true);
       }
     }
     loadConsent();
   }, [setConsent]);
 
-  // Save new completed messages when consent is active
+  // Save new completed messages unless stealth mode (consent === false) is active
   useEffect(() => {
-    if (!consent || !threadId) return;
+    if (consent === false || !threadId) return;
 
     const newCount = messages.length;
     const prevCount = savedCountRef.current;
@@ -95,35 +88,22 @@ export function useChatPersistence(
 
   const updateConsent = useCallback(
     async (newConsent: boolean) => {
+      // Apply locally regardless of server outcome so stealth mode works even
+      // in DB-less deployments where /api/preferences 500s.
+      setConsent(newConsent);
       try {
         const res = await fetch("/api/preferences", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ chatPersistenceConsent: newConsent }),
         });
-
-        if (res.ok) {
-          setConsent(newConsent);
-          return true;
-        }
+        return res.ok;
       } catch {
-        // Failed to update
+        return false;
       }
-      return false;
     },
     [setConsent]
   );
 
-  const dismissBanner = useCallback(() => {
-    setBannerDismissed(true);
-    try {
-      window.localStorage.setItem(BANNER_DISMISSED_KEY, "true");
-    } catch {
-      // no-op
-    }
-  }, []);
-
-  const showBanner = consent === false && !bannerDismissed;
-
-  return { consent, updateConsent, showBanner, dismissBanner };
+  return { consent, updateConsent };
 }

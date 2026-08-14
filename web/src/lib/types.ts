@@ -436,7 +436,9 @@ export type ContextTab =
   | "compliance"
   | "interview"
   | "readiness"
-  | "history";
+  | "history"
+  | "journey"
+  | "threads";
 
 export interface UIState {
   contextPanelOpen: boolean;

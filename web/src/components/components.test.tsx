@@ -4,9 +4,6 @@ import { vi } from "vitest";
 import ChatInput from "@/components/chat/ChatInput";
 import MainChat from "@/components/chat/MainChat";
 import MessageThread from "@/components/chat/MessageThread";
-import NextActionBanner from "@/components/chat/NextActionBanner";
-import SuggestedActionsBar from "@/components/chat/SuggestedActionsBar";
-import WorkflowTransparencyDeck from "@/components/chat/WorkflowTransparencyDeck";
 import ChallengeCard from "@/components/chat/messages/ChallengeCard";
 import ComplianceReportCard from "@/components/chat/messages/ComplianceReportCard";
 import DraftReviewBlock from "@/components/chat/messages/DraftReviewBlock";
@@ -16,25 +13,17 @@ import LearningSummaryCard from "@/components/chat/messages/LearningSummaryCard"
 import PhaseTransitionCard from "@/components/chat/messages/PhaseTransitionCard";
 import ResumeSessionCard from "@/components/chat/messages/ResumeSessionCard";
 import WelcomeCard from "@/components/chat/messages/WelcomeCard";
+import ChatSettingsModal from "@/components/settings/ChatSettingsModal";
+import BrandHero from "@/components/shared/BrandHero";
 import ComplianceDashboardPanel from "@/components/context-panel/ComplianceDashboardPanel";
-import ContextPanel from "@/components/context-panel/ContextPanel";
 import DraftViewerPanel from "@/components/context-panel/DraftViewerPanel";
 import InterviewTrackerPanel from "@/components/context-panel/InterviewTrackerPanel";
 import LearningsPanel from "@/components/context-panel/LearningsPanel";
-import OperationsDashboardPanel from "@/components/context-panel/OperationsDashboardPanel";
-import PanelTabs from "@/components/context-panel/PanelTabs";
 import SubmissionReadinessPanel from "@/components/context-panel/SubmissionReadinessPanel";
 import VersionHistoryPanel from "@/components/context-panel/VersionHistoryPanel";
-import LeftRail from "@/components/left-rail/LeftRail";
-import PhaseItem from "@/components/left-rail/PhaseItem";
-import PhaseStepper from "@/components/left-rail/PhaseStepper";
-import QuickActions from "@/components/left-rail/QuickActions";
-import SessionMeta from "@/components/left-rail/SessionMeta";
-import SubProgress from "@/components/left-rail/SubProgress";
-import OnboardingExperience from "@/components/onboarding/OnboardingExperience";
 import ThreadColumn from "@/components/threads/ThreadColumn";
 import { useProposalStore } from "@/lib/store";
-import { patchProposalStore, resetProposalStore } from "@/test/store-fixture";
+import { resetProposalStore } from "@/test/store-fixture";
 import type { ChatMessage, ComplianceIssue } from "@/lib/types";
 
 const failureIssue: ComplianceIssue = {
@@ -55,15 +44,46 @@ describe("component coverage and failure/security behaviors", () => {
     const onSend = vi.fn();
     render(<ChatInput onSend={onSend} />);
 
-    const box = screen.getByPlaceholderText(/ask in plain language/i);
+    const box = screen.getByPlaceholderText(/reply to granite/i);
     await user.type(box, "  hello team  {enter}");
     expect(onSend).toHaveBeenCalledWith("hello team");
   });
 
-  it("MainChat renders workspace shell", () => {
+  it("MainChat renders without the deleted banner stack or clear-conversation control", () => {
     render(<MainChat onAction={vi.fn()} />);
-    expect(screen.getByText(/granite workspace/i)).toBeInTheDocument();
-    expect(screen.getByText(/current thread/i)).toBeInTheDocument();
+    expect(screen.queryByText(/granite workspace/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /clear conversation/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/no special commands required/i)).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/reply to granite/i)).toBeInTheDocument();
+  });
+
+  it("MainChat shows the stealth indicator when stealthMode is on, hides it otherwise", () => {
+    const { rerender } = render(<MainChat onAction={vi.fn()} stealthMode />);
+    expect(screen.getByText(/stealth.*not being saved/i)).toBeInTheDocument();
+
+    rerender(<MainChat onAction={vi.fn()} stealthMode={false} />);
+    expect(screen.queryByText(/stealth.*not being saved/i)).not.toBeInTheDocument();
+  });
+
+  it("ChatSettingsModal renders the Stealth mode toggle and flips consent via onUpdateConsent", async () => {
+    const user = userEvent.setup();
+    const onUpdateConsent = vi.fn().mockResolvedValue(true);
+
+    // consent=true (default, saving on) -> stealth toggle is off; clicking enables stealth (consent -> false)
+    const { rerender } = render(
+      <ChatSettingsModal consent={true} onUpdateConsent={onUpdateConsent} onClose={vi.fn()} />
+    );
+    expect(screen.getByText(/stealth mode/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /stealth mode/i }));
+    expect(onUpdateConsent).toHaveBeenCalledWith(false);
+
+    // consent=false (stealth on) -> clicking disables stealth (consent -> true)
+    onUpdateConsent.mockClear();
+    rerender(
+      <ChatSettingsModal consent={false} onUpdateConsent={onUpdateConsent} onClose={vi.fn()} />
+    );
+    await user.click(screen.getByRole("button", { name: /stealth mode/i }));
+    expect(onUpdateConsent).toHaveBeenCalledWith(true);
   });
 
   it("MessageThread renders text and escapes script tags", () => {
@@ -81,27 +101,9 @@ describe("component coverage and failure/security behaviors", () => {
       { id: "m2", type: "text", role: "agent", content: "Next step guidance" },
     ];
     render(<MessageThread messages={messages} onAction={vi.fn()} />);
-    expect(screen.getByText(/welcome to granite/i)).toBeInTheDocument();
+    expect(screen.getByText(/i'm granite/i)).not.toBeVisible();
+    expect(screen.getByText(/show welcome message/i)).toBeInTheDocument();
     expect(screen.getByText(/next step guidance/i)).toBeInTheDocument();
-  });
-
-  it("NextActionBanner dismisses safely", async () => {
-    const user = userEvent.setup();
-    render(<NextActionBanner text="Complete profile" />);
-    await user.click(screen.getByLabelText(/dismiss/i));
-    expect(screen.queryByText(/complete profile/i)).not.toBeInTheDocument();
-  });
-
-  it("SuggestedActionsBar renders phase actions", () => {
-    render(<SuggestedActionsBar onAction={vi.fn()} />);
-    expect(screen.getByRole("button", { name: /quick onboarding/i })).toBeInTheDocument();
-  });
-
-  it("WorkflowTransparencyDeck expands dashboard view", async () => {
-    const user = userEvent.setup();
-    render(<WorkflowTransparencyDeck onAction={vi.fn()} />);
-    await user.click(screen.getByRole("button", { name: /open dashboard/i }));
-    expect(screen.getByText(/transparent process view/i)).toBeInTheDocument();
   });
 
   it("ChallengeCard emits action choices", async () => {
@@ -196,12 +198,9 @@ describe("component coverage and failure/security behaviors", () => {
     expect(screen.getByText(/weaknesses found/i)).toBeInTheDocument();
   });
 
-  it("PhaseTransitionCard links to next phase action", async () => {
-    const user = userEvent.setup();
-    const onAction = vi.fn();
-    render(<PhaseTransitionCard fromPhase={2} toPhase={3} summary="Ready to continue." onAction={onAction} />);
-    await user.click(screen.getByRole("button", { name: /continue to learn from past work/i }));
-    expect(onAction).toHaveBeenCalledWith("go-phase:3");
+  it("PhaseTransitionCard renders a ruled interstitial for the destination phase", () => {
+    render(<PhaseTransitionCard fromPhase={2} toPhase={3} summary="Ready to continue." onAction={vi.fn()} />);
+    expect(screen.getByText(/entering phase 3/i)).toBeInTheDocument();
   });
 
   it("ResumeSessionCard renders continuation actions", async () => {
@@ -216,25 +215,24 @@ describe("component coverage and failure/security behaviors", () => {
         onAction={onAction}
       />
     );
-    await user.click(screen.getByRole("button", { name: /continue where i left off/i }));
-    expect(onAction).toHaveBeenCalledWith("continue");
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
+    expect(onAction).toHaveBeenCalledWith("go-phase:4");
   });
 
-  it("WelcomeCard renders CTA options", () => {
-    patchProposalStore({ researcherInfo: { ...useProposalStore.getState().researcherInfo, name: "Ada" } });
-    render(<WelcomeCard onAction={vi.fn()} />);
-    expect(screen.getByText(/welcome, ada/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /repeat onboarding/i })).toBeInTheDocument();
+  it("WelcomeCard renders a short bare greeting", () => {
+    render(<WelcomeCard />);
+    expect(screen.getByText(/i'm granite/i)).toBeInTheDocument();
+  });
+
+  it("BrandHero renders the product name and tagline", () => {
+    render(<BrandHero />);
+    expect(screen.getByRole("heading", { name: "Granite" })).toBeInTheDocument();
+    expect(screen.getByText(/isf grant writing, thought through/i)).toBeInTheDocument();
   });
 
   it("ComplianceDashboardPanel handles no-run state", () => {
     render(<ComplianceDashboardPanel onAction={vi.fn()} />);
     expect(screen.getByText(/compliance check will run/i)).toBeInTheDocument();
-  });
-
-  it("ContextPanel renders operations tab by default", () => {
-    render(<ContextPanel onAction={vi.fn()} />);
-    expect(screen.getByText(/operations dashboard/i)).toBeInTheDocument();
   });
 
   it("DraftViewerPanel shows empty state without drafts", () => {
@@ -250,19 +248,6 @@ describe("component coverage and failure/security behaviors", () => {
   it("LearningsPanel handles empty learnings set", () => {
     render(<LearningsPanel />);
     expect(screen.getByText(/no past proposals analyzed yet/i)).toBeInTheDocument();
-  });
-
-  it("OperationsDashboardPanel renders process overview", () => {
-    render(<OperationsDashboardPanel />);
-    expect(screen.getByText(/operations dashboard/i)).toBeInTheDocument();
-    expect(screen.getByText(/ongoing processes/i)).toBeInTheDocument();
-  });
-
-  it("PanelTabs switches active tab in store", async () => {
-    const user = userEvent.setup();
-    render(<PanelTabs />);
-    await user.click(screen.getByRole("button", { name: /draft/i }));
-    expect(useProposalStore.getState().ui.activeContextTab).toBe("draft");
   });
 
   it("SubmissionReadinessPanel renders blockers and actions", () => {
@@ -286,53 +271,6 @@ describe("component coverage and failure/security behaviors", () => {
     confirmSpy.mockRestore();
   });
 
-  it("LeftRail renders navigation and quick actions", () => {
-    render(<LeftRail onPhaseClick={vi.fn()} onAction={vi.fn()} />);
-    expect(screen.getByText(/isf personal research grant/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /open operations dashboard/i })).toBeInTheDocument();
-  });
-
-  it("PhaseItem renders status-specific state", () => {
-    render(<PhaseItem phase={2} label="ISF Requirements" status="active" onClick={vi.fn()} />);
-    expect(screen.getByText(/isf requirements/i)).toBeInTheDocument();
-  });
-
-  it("PhaseStepper renders all seven phases", () => {
-    render(<PhaseStepper onPhaseClick={vi.fn()} />);
-    expect(screen.getAllByRole("button").length).toBeGreaterThanOrEqual(7);
-  });
-
-  it("QuickActions dispatches selected action", async () => {
-    const user = userEvent.setup();
-    const onAction = vi.fn();
-    render(<QuickActions onAction={onAction} />);
-    await user.click(screen.getByRole("button", { name: /export my data/i }));
-    expect(onAction).toHaveBeenCalledWith("export-data");
-  });
-
-  it("SessionMeta shows not-saved fallback", () => {
-    render(<SessionMeta />);
-    expect(screen.getByText(/not saved yet/i)).toBeInTheDocument();
-  });
-
-  it("SubProgress supports interview and draft branches", () => {
-    const { rerender } = render(<SubProgress phase={4} />);
-    expect(screen.getByText(/eligibility & background/i)).toBeInTheDocument();
-    rerender(<SubProgress phase={5} />);
-    expect(screen.getByText(/abstract/i)).toBeInTheDocument();
-  });
-
-  it("OnboardingExperience blocks continuation until required fields are set", async () => {
-    const user = userEvent.setup();
-    const onComplete = vi.fn();
-    render(<OnboardingExperience onComplete={onComplete} />);
-
-    const continueButton = screen.getByRole("button", { name: /continue/i });
-    expect(continueButton).toBeDisabled();
-    await user.type(screen.getByPlaceholderText(/your name/i), "Ada");
-    expect(continueButton).toBeEnabled();
-  });
-
   it("ThreadColumn supports search, rename, and delete actions", async () => {
     const user = userEvent.setup();
     const onSelectThread = vi.fn();
@@ -353,10 +291,8 @@ describe("component coverage and failure/security behaviors", () => {
         ]}
         archivedThreads={[]}
         activeThreadId={null}
-        collapsed={false}
         onSelectThread={onSelectThread}
         onCreateThread={vi.fn()}
-        onToggleCollapsed={vi.fn()}
         onRenameThread={onRenameThread}
         onDeleteThread={onDeleteThread}
         onRestoreThread={vi.fn()}
