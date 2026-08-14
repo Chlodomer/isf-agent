@@ -40,26 +40,26 @@ export default function ConfirmDialog({
 
   const confirmButtonClass =
     variant === "danger"
-      ? "rounded-lg border border-[#d4a597] bg-[#a5674a] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#8e5840] transition-colors"
-      : "rounded-lg bg-[#312a24] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#241f1b] transition-colors";
+      ? "font-sans text-xs text-blocker underline underline-offset-2 transition-colors hover:opacity-80"
+      : "font-sans text-xs text-ink underline underline-offset-2 transition-colors hover:text-muted";
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-canvas/60"
       onKeyDown={handleKeyDown}
     >
-      <div className="w-full max-w-sm rounded-2xl border border-[#d1c4b0] bg-[#fdf8f1] shadow-2xl">
-        <div className="px-5 py-4">
-          <h3 className="text-sm font-semibold text-[#2f2924]">{title}</h3>
-          <p className="mt-2 text-xs text-[#6d5841] leading-relaxed">
+      <div className="w-full max-w-sm rounded-[12px] border border-hairline-strong bg-surface shadow-[0_24px_64px_rgba(26,24,21,0.12)]">
+        <div className="px-7 py-5">
+          <h3 className="font-serif text-lg text-ink">{title}</h3>
+          <p className="mt-2 font-sans text-[13px] text-muted leading-relaxed">
             {message}
           </p>
         </div>
-        <div className="border-t border-[#e5ddd0] px-5 py-3 flex justify-end gap-2">
+        <div className="border-t border-hairline px-7 py-4 flex justify-end gap-4">
           <button
             ref={cancelRef}
             onClick={onCancel}
-            className="rounded-lg border border-[#d1c4b0] px-4 py-1.5 text-xs font-semibold text-[#6d5841] hover:bg-[#f5ede3] transition-colors"
+            className="font-sans text-xs text-muted transition-colors hover:text-ink"
           >
             {cancelLabel}
           </button>

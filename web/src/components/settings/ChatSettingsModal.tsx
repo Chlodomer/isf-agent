@@ -48,27 +48,28 @@ export default function ChatSettingsModal({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-[#d1c4b0] bg-[#fdf8f1] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[#e5ddd0] px-5 py-4">
-          <h2 className="text-base font-semibold text-[#2f2924]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-canvas/60">
+      <div className="w-full max-w-md rounded-[12px] border border-hairline-strong bg-surface shadow-[0_24px_64px_rgba(26,24,21,0.12)]">
+        <div className="flex items-center justify-between border-b border-hairline px-7 py-5">
+          <h2 className="font-serif text-lg text-ink">
             Chat Settings
           </h2>
           <button
             onClick={onClose}
-            className="text-[#a99580] hover:text-[#6d5841]"
+            aria-label="Close"
+            className="text-muted transition-colors hover:text-ink"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="px-5 py-4 space-y-4">
+        <div className="px-7 py-5 space-y-4 font-sans text-[13px] text-body">
           {/* Persistence toggle */}
           <div className="flex items-start gap-3">
-            <Database size={18} className="text-[#8b6e50] mt-0.5" />
+            <Database size={18} className="text-muted mt-0.5" />
             <div className="flex-1">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-[#3f342b]">
+                <p className="text-sm font-semibold text-ink">
                   Save chat history
                 </p>
                 <button
@@ -76,18 +77,18 @@ export default function ChatSettingsModal({
                   disabled={isToggling || consent === null}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     consent
-                      ? "bg-[#986c43]"
-                      : "bg-[#c4b5a2]"
+                      ? "bg-ink"
+                      : "bg-faint"
                   } ${isToggling ? "opacity-50" : ""}`}
                 >
                   <span
-                    className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+                    className={`inline-block h-4 w-4 rounded-full bg-surface transition-transform ${
                       consent ? "translate-x-6" : "translate-x-1"
                     }`}
                   />
                 </button>
               </div>
-              <p className="text-xs text-[#6d5841] mt-1 leading-relaxed">
+              <p className="text-[13px] text-muted mt-1 leading-relaxed">
                 {consent
                   ? "Conversations are saved to your account. Disable to stop saving (existing data remains until purged)."
                   : "Conversations are only stored in this browser. Enable to save them to your account."}
@@ -97,25 +98,25 @@ export default function ChatSettingsModal({
 
           {/* Purge section */}
           {consent !== null && (
-            <div className="flex items-start gap-3 pt-2 border-t border-[#e5ddd0]">
-              <Trash2 size={18} className="text-[#a5674a] mt-0.5" />
+            <div className="flex items-start gap-3 pt-3 border-t border-hairline">
+              <Trash2 size={18} className="text-blocker mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-semibold text-[#3f342b]">
+                <p className="text-sm font-semibold text-ink">
                   Delete server data
                 </p>
-                <p className="text-xs text-[#6d5841] mt-1 leading-relaxed">
+                <p className="text-[13px] text-muted mt-1 leading-relaxed">
                   Permanently remove all chat history stored on the server. Your
                   local browser data is not affected.
                 </p>
                 {purgeResult && (
-                  <p className="text-xs text-[#6d5841] mt-1 font-medium">
+                  <p className="text-[13px] text-muted mt-1 font-medium">
                     {purgeResult}
                   </p>
                 )}
                 <button
                   onClick={handlePurge}
                   disabled={isPurging}
-                  className="mt-2 rounded-lg border border-[#d4a597] px-3 py-1.5 text-xs font-medium text-[#a5674a] hover:bg-[#fdf0ec] transition-colors disabled:opacity-50"
+                  className="mt-2 font-sans text-xs text-blocker underline underline-offset-2 transition-colors hover:opacity-80 disabled:opacity-50"
                 >
                   {isPurging ? "Deleting..." : "Delete all server data"}
                 </button>
@@ -124,11 +125,11 @@ export default function ChatSettingsModal({
           )}
         </div>
 
-        <div className="border-t border-[#e5ddd0] px-5 py-3 flex items-center justify-between">
+        <div className="border-t border-hairline px-7 py-4 flex items-center justify-between font-sans text-xs">
           {onAction ? (
             <button
               onClick={() => onAction("load-demo")}
-              className="text-xs font-medium text-[#a99580] transition-colors hover:text-[#6d5841]"
+              className="text-muted transition-colors hover:text-ink"
             >
               Load demo flow
             </button>
@@ -137,7 +138,7 @@ export default function ChatSettingsModal({
           )}
           <button
             onClick={onClose}
-            className="rounded-lg bg-[#312a24] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#241f1b] transition-colors"
+            className="text-ink underline underline-offset-2 transition-colors hover:text-muted"
           >
             Done
           </button>

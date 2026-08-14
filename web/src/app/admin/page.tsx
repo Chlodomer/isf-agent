@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import Logo from "@/components/shared/Logo";
 import {
   ROLE_OPTIONS,
   STATUS_MESSAGES,
@@ -24,9 +25,9 @@ interface AdminPageProps {
 }
 
 function roleToneClass(tone: SecurityAlertTone): string {
-  if (tone === "critical") return "border-red-300 bg-red-50 text-red-800";
-  if (tone === "warning") return "border-amber-300 bg-amber-50 text-amber-800";
-  return "border-slate-200 bg-slate-50 text-slate-700";
+  if (tone === "critical") return "border-blocker text-blocker";
+  if (tone === "warning") return "border-challenge text-challenge";
+  return "border-hairline-strong text-body";
 }
 
 async function updateUserRole(formData: FormData) {
@@ -253,22 +254,25 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   if (!hasDatabaseConfig) {
     return (
-      <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-8">
+      <main className="min-h-screen bg-canvas px-4 py-8 sm:px-8">
         <div className="mx-auto max-w-4xl space-y-6">
           <header className="flex items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900">Admin Console</h1>
-              <p className="mt-1 text-sm text-slate-600">Operational tools and account management.</p>
+            <div className="flex items-center gap-3">
+              <Logo size={28} />
+              <div>
+                <h1 className="font-serif text-2xl text-ink">Admin Console</h1>
+                <p className="mt-1 font-sans text-sm text-muted">Operational tools and account management.</p>
+              </div>
             </div>
             <Link
               href="/proposal/new"
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="rounded-[8px] border border-hairline-strong bg-surface px-3 py-2 font-sans text-sm font-semibold text-body transition-colors hover:bg-hairline"
             >
               Back to workspace
             </Link>
           </header>
 
-          <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          <section className="border-s-2 border-challenge ps-4 py-3 font-sans text-sm text-body">
             {statusMessage ?? STATUS_MESSAGES["db-not-configured"]}
           </section>
         </div>
@@ -478,48 +482,51 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-8">
+    <main className="min-h-screen bg-canvas px-4 py-8 sm:px-8">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900">Admin Console</h1>
-            <p className="mt-1 text-sm text-slate-600">
-              Operational overview, security signals, and user role management.
-            </p>
+          <div className="flex items-center gap-3">
+            <Logo size={28} />
+            <div>
+              <h1 className="font-serif text-2xl text-ink">Admin Console</h1>
+              <p className="mt-1 font-sans text-sm text-muted">
+                Operational overview, security signals, and user role management.
+              </p>
+            </div>
           </div>
           <Link
             href="/proposal/new"
-            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="rounded-[8px] border border-hairline-strong bg-surface px-3 py-2 font-sans text-sm font-semibold text-body transition-colors hover:bg-hairline"
           >
             Back to workspace
           </Link>
         </header>
 
         {statusMessage && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+          <div className="rounded-[8px] border border-hairline-strong bg-surface px-4 py-2 font-sans text-sm text-body">
             {statusMessage}
           </div>
         )}
 
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="rounded-xl border border-hairline-strong bg-surface p-4">
           <form className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
-            <label className="space-y-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <label className="space-y-1 ui-label text-muted">
               Search users
               <input
                 type="text"
                 name="q"
                 defaultValue={query}
                 placeholder="email or name"
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-800"
+                className="w-full rounded-[8px] border border-hairline-strong bg-surface px-3 py-2 font-sans text-sm font-normal text-body outline-none focus:border-teal focus:shadow-[0_0_0_3px_rgba(30,111,106,0.10)]"
               />
             </label>
 
-            <label className="space-y-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <label className="space-y-1 ui-label text-muted">
               Role
               <select
                 name="role"
                 defaultValue={roleFilter}
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-800"
+                className="w-full rounded-[8px] border border-hairline-strong bg-surface px-3 py-2 font-sans text-sm font-normal text-body outline-none focus:border-teal focus:shadow-[0_0_0_3px_rgba(30,111,106,0.10)]"
               >
                 <option value="ALL">All roles</option>
                 {ROLE_OPTIONS.map((role) => (
@@ -533,13 +540,13 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             <div className="flex items-end gap-2">
               <button
                 type="submit"
-                className="rounded-md border border-slate-300 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200"
+                className="rounded-[8px] border border-hairline-strong bg-surface px-3 py-2 font-sans text-sm font-semibold text-body transition-colors hover:bg-hairline"
               >
                 Apply filters
               </button>
               <a
                 href="/admin"
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-[8px] border border-hairline-strong bg-surface px-3 py-2 font-sans text-sm font-semibold text-body transition-colors hover:bg-hairline"
               >
                 Reset
               </a>
@@ -548,79 +555,79 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         </section>
 
         <section className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Users</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{userCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">Users</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{userCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Projects</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{projectCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">Projects</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{projectCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Threads</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{threadCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">Threads</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{threadCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Admins</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{adminCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">Admins</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{adminCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Active Users (7d)</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{activeUsers7dCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">Active Users (7d)</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{activeUsers7dCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Dormant Users (30d)</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{inactiveUsers30dCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">Dormant Users (30d)</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{inactiveUsers30dCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">New Users (7d)</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{recentSignupsCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">New Users (7d)</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{recentSignupsCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">No Login Yet</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{usersWithoutLoginCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">No Login Yet</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{usersWithoutLoginCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Messages</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{messageCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">Messages</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{messageCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Messages (7d)</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{messagesLast7dCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">Messages (7d)</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{messagesLast7dCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Source Files</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{sourceFileCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">Source Files</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{sourceFileCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Uploads (7d)</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{uploadsLast7dCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">Uploads (7d)</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{uploadsLast7dCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Compliance Reports</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{complianceReportCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">Compliance Reports</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{complianceReportCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Readiness Snapshots</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{readinessSnapshotCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">Readiness Snapshots</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{readinessSnapshotCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Admin Actions (7d)</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{adminActions7dCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">Admin Actions (7d)</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{adminActions7dCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Password Resets (7d)</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{passwordResets7dCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">Password Resets (7d)</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{passwordResets7dCount}</p>
           </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Account Deletions (30d)</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{deletedUsers30dCount}</p>
+          <article className="rounded-xl border border-hairline-strong bg-surface p-4">
+            <p className="ui-label text-muted">Account Deletions (30d)</p>
+            <p className="mt-2 font-sans text-2xl font-semibold text-ink">{deletedUsers30dCount}</p>
           </article>
         </section>
 
-        <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">Security Signals</h2>
+        <section className="rounded-xl border border-hairline-strong bg-surface">
+          <div className="border-b border-hairline px-4 py-3">
+            <h2 className="font-serif text-sm text-ink">Security Signals</h2>
           </div>
           <div className="space-y-2 p-4">
             {buildSecurityAlerts({
@@ -632,7 +639,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             }).map((alert) => (
               <div
                 key={alert.id}
-                className={`rounded-lg border px-3 py-2 text-sm ${roleToneClass(alert.tone)}`}
+                className={`border-s-2 ps-3 py-1.5 font-sans text-sm ${roleToneClass(alert.tone)}`}
               >
                 {alert.message}
               </div>
@@ -640,13 +647,13 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </div>
         </section>
 
-        <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">Users</h2>
+        <section className="rounded-xl border border-hairline-strong bg-surface">
+          <div className="border-b border-hairline px-4 py-3">
+            <h2 className="font-serif text-sm text-ink">Users</h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+            <table className="min-w-full divide-y divide-hairline text-sm">
+              <thead className="bg-canvas text-left ui-label text-muted">
                 <tr>
                   <th className="px-4 py-2.5">Name</th>
                   <th className="px-4 py-2.5">Email</th>
@@ -659,16 +666,16 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   <th className="px-4 py-2.5">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-hairline">
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-3 text-slate-500">
+                    <td colSpan={9} className="px-4 py-3 text-muted">
                       No users found for this filter.
                     </td>
                   </tr>
                 ) : (
                   users.map((user) => (
-                    <tr key={user.id} className="text-slate-700">
+                    <tr key={user.id} className="text-body">
                       {(() => {
                         const userStats = statsByUserId.get(user.id) ?? {
                           projects: 0,
@@ -699,7 +706,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                                 <select
                                   name="role"
                                   defaultValue={user.role}
-                                  className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs"
+                                  className="rounded-[6px] border border-hairline-strong bg-surface px-2 py-1 font-sans text-xs text-body outline-none"
                                 >
                                   {ROLE_OPTIONS.map((role) => (
                                     <option key={role} value={role}>
@@ -709,7 +716,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                                 </select>
                                 <button
                                   type="submit"
-                                  className="rounded-md border border-slate-300 bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                                  className="rounded-[6px] border border-hairline-strong bg-surface px-2 py-1 font-sans text-xs font-semibold text-body transition-colors hover:bg-hairline"
                                 >
                                   Update role
                                 </button>
@@ -723,11 +730,11 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                                   minLength={MIN_PASSWORD_LENGTH}
                                   required
                                   placeholder={`New password (min ${MIN_PASSWORD_LENGTH})`}
-                                  className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs"
+                                  className="w-full rounded-[6px] border border-hairline-strong bg-surface px-2 py-1 font-sans text-xs text-body outline-none"
                                 />
                                 <button
                                   type="submit"
-                                  className="whitespace-nowrap rounded-md border border-blue-300 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                                  className="whitespace-nowrap rounded-[6px] border border-hairline-strong bg-surface px-2 py-1 font-sans text-xs font-semibold text-body transition-colors hover:bg-hairline"
                                 >
                                   Reset password
                                 </button>
@@ -740,11 +747,11 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                                   name="confirmEmail"
                                   required
                                   placeholder="Type email to delete"
-                                  className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs"
+                                  className="w-full rounded-[6px] border border-hairline-strong bg-surface px-2 py-1 font-sans text-xs text-body outline-none"
                                 />
                                 <button
                                   type="submit"
-                                  className="whitespace-nowrap rounded-md border border-red-300 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
+                                  className="whitespace-nowrap rounded-[6px] border border-blocker px-2 py-1 font-sans text-xs font-semibold text-blocker transition-colors hover:bg-blocker/5"
                                 >
                                   Delete account
                                 </button>
@@ -761,13 +768,13 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </div>
         </section>
 
-        <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">Account Activity Audit Log</h2>
+        <section className="rounded-xl border border-hairline-strong bg-surface">
+          <div className="border-b border-hairline px-4 py-3">
+            <h2 className="font-serif text-sm text-ink">Account Activity Audit Log</h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+            <table className="min-w-full divide-y divide-hairline text-sm">
+              <thead className="bg-canvas text-left ui-label text-muted">
                 <tr>
                   <th className="px-4 py-2.5">When</th>
                   <th className="px-4 py-2.5">Action</th>
@@ -775,16 +782,16 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   <th className="px-4 py-2.5">Details</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-hairline">
                 {recentAccountAuditLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-3 text-slate-500">
+                    <td colSpan={4} className="px-4 py-3 text-muted">
                       No account actions recorded.
                     </td>
                   </tr>
                 ) : (
                   recentAccountAuditLogs.map((log) => (
-                    <tr key={log.id} className="text-slate-700">
+                    <tr key={log.id} className="text-body">
                       <td className="px-4 py-2.5">{log.createdAt.toLocaleString()}</td>
                       <td className="px-4 py-2.5 font-medium">{log.action}</td>
                       <td className="px-4 py-2.5">{log.actor?.email ?? "Unknown actor"}</td>
