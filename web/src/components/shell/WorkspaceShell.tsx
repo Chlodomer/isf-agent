@@ -76,7 +76,7 @@ export default function WorkspaceShell({
       </nav>
 
       {/* Open paper */}
-      <main className="relative flex min-w-0 flex-1 flex-col items-center px-4 lg:px-7">
+      <main className="relative flex min-w-0 flex-1 flex-col items-center px-4 pb-14 lg:px-7 lg:pb-0">
         <WhisperLine
           phase={phase}
           activitySummary={activitySummary}
@@ -110,11 +110,20 @@ export default function WorkspaceShell({
         <RailButton label="Threads" onClick={() => onOpenSheet("threads")}>
           <MessagesSquare size={16} strokeWidth={1.5} />
         </RailButton>
+        <RailButton label="Upload a document" onClick={onUpload}>
+          <Upload size={16} strokeWidth={1.5} />
+        </RailButton>
         <RailButton label="Draft" onClick={() => onOpenSheet("draft")}>
           <FileText size={16} strokeWidth={1.5} />
         </RailButton>
+        <RailButton label="Insights" onClick={() => onOpenSheet("learnings")}>
+          <Lightbulb size={16} strokeWidth={1.5} />
+        </RailButton>
         <RailButton label="Compliance" onClick={() => onOpenSheet("compliance")}>
           <ClipboardCheck size={16} strokeWidth={1.5} />
+        </RailButton>
+        <RailButton label="History" onClick={() => onOpenSheet("history")}>
+          <History size={16} strokeWidth={1.5} />
         </RailButton>
         <RailButton label="Settings" onClick={onOpenSettings}>
           <Settings size={16} strokeWidth={1.5} />
