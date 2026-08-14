@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import { findOwnedThread } from "@/lib/user-data";
+import SignOutButton from "@/components/shared/SignOutButton";
 
 const LOCAL_THREAD_ID_PREFIX = "thread-";
 
@@ -66,14 +67,7 @@ export default async function ProposalLayout({
             Admin
           </Link>
         )}
-        <form action={handleSignOut}>
-          <button
-            type="submit"
-            className="rounded-full border border-hairline-strong bg-surface px-2 py-0.5 font-medium text-body transition-colors hover:bg-hairline"
-          >
-            Sign out
-          </button>
-        </form>
+        <SignOutButton action={handleSignOut} />
       </div>
       {children}
     </div>

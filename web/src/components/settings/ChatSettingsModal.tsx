@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { Trash2, X } from "lucide-react";
+import { clearClientWorkspaceState } from "@/lib/demo-reset";
 
 interface ChatSettingsModalProps {
   consent: boolean | null;
@@ -131,16 +132,25 @@ export default function ChatSettingsModal({
         </div>
 
         <div className="border-t border-hairline px-7 py-4 flex items-center justify-between font-sans text-xs">
-          {onAction ? (
+          <div className="flex items-center gap-4">
+            {onAction && (
+              <button
+                onClick={() => onAction("load-demo")}
+                className="text-muted transition-colors hover:text-ink"
+              >
+                Load demo flow
+              </button>
+            )}
             <button
-              onClick={() => onAction("load-demo")}
-              className="text-muted transition-colors hover:text-ink"
+              onClick={() => {
+                clearClientWorkspaceState();
+                window.location.assign("/sign-in");
+              }}
+              className="text-blocker underline underline-offset-2 transition-opacity hover:opacity-80"
             >
-              Load demo flow
+              Reset demo
             </button>
-          ) : (
-            <span />
-          )}
+          </div>
           <button
             onClick={onClose}
             className="text-ink underline underline-offset-2 transition-colors hover:text-muted"
