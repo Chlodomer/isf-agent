@@ -15,6 +15,7 @@ export default function PhaseDots({ currentPhase, onSelect }: PhaseDotsProps) {
       onClick={onSelect}
       aria-label={`Your journey — phase ${currentPhase} of 7: ${PHASE_LABELS[currentPhase]}`}
       title={`Phase ${currentPhase} of 7 · ${PHASE_LABELS[currentPhase]}`}
+      data-tour="journey"
       className="flex flex-col items-center gap-[7px] py-1.5"
     >
       {PHASES.map((phase) => {

@@ -28,11 +28,13 @@ function RailButton({
   label,
   onClick,
   active,
+  tourId,
   children,
 }: {
   label: string;
   onClick: () => void;
   active?: boolean;
+  tourId?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -40,6 +42,7 @@ function RailButton({
       onClick={onClick}
       aria-label={label}
       title={label}
+      data-tour={tourId}
       className={`transition-colors hover:text-ink ${active ? "text-ink" : "text-muted"}`}
     >
       {children}
@@ -73,7 +76,12 @@ export default function WorkspaceShell({
       <nav className="hidden w-12 shrink-0 flex-col items-center gap-5 border-e border-hairline bg-rail-wash py-4 lg:flex">
         <Logo size={24} />
         <PhaseDots currentPhase={phase} onSelect={() => onOpenSheet("journey")} />
-        <RailButton label="Threads" onClick={() => onOpenSheet("threads")} active={isThreadsActive}>
+        <RailButton
+          label="Threads"
+          onClick={() => onOpenSheet("threads")}
+          active={isThreadsActive}
+          tourId="threads"
+        >
           <MessagesSquare size={16} strokeWidth={1.5} />
         </RailButton>
         <RailButton label="Upload a document" onClick={onUpload}>
@@ -98,13 +106,18 @@ export default function WorkspaceShell({
 
       {/* Right rail: work surfaces */}
       <nav className="hidden w-12 shrink-0 flex-col items-center gap-5 border-s border-hairline bg-rail-wash py-4 lg:flex">
-        <RailButton label="Draft" onClick={() => onOpenSheet("draft")} active={isDraftActive}>
+        <RailButton label="Draft" onClick={() => onOpenSheet("draft")} active={isDraftActive} tourId="draft">
           <FileText size={16} strokeWidth={1.5} />
         </RailButton>
         <RailButton label="Insights" onClick={() => onOpenSheet("learnings")} active={isLearningsActive}>
           <Lightbulb size={16} strokeWidth={1.5} />
         </RailButton>
-        <RailButton label="Compliance" onClick={() => onOpenSheet("compliance")} active={isComplianceActive}>
+        <RailButton
+          label="Compliance"
+          onClick={() => onOpenSheet("compliance")}
+          active={isComplianceActive}
+          tourId="compliance"
+        >
           <ClipboardCheck size={16} strokeWidth={1.5} />
         </RailButton>
         <RailButton label="History" onClick={() => onOpenSheet("history")} active={isHistoryActive}>

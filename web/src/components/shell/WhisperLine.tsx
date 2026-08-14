@@ -10,7 +10,7 @@ interface WhisperLineProps {
 
 export default function WhisperLine({ phase, activitySummary, onOpenJourney }: WhisperLineProps) {
   return (
-    <div className="pt-4 text-center font-sans text-[11px] tracking-[0.03em] text-muted">
+    <div data-tour="whisper" className="pt-4 text-center font-sans text-[11px] tracking-[0.03em] text-muted">
       <span>
         {PHASE_LABELS[phase]}
         {activitySummary ? ` · ${activitySummary}` : ""}

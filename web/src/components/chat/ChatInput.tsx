@@ -72,7 +72,10 @@ export default function ChatInput({
         </div>
       )}
 
-      <div className="flex items-end gap-2 rounded-[24px] border border-hairline-strong bg-surface px-5 py-3.5 focus-within:border-teal focus-within:shadow-[0_0_0_3px_rgba(30,111,106,0.10)]">
+      <div
+        data-tour="composer"
+        className="flex items-end gap-2 rounded-[24px] border border-hairline-strong bg-surface px-5 py-3.5 focus-within:border-teal focus-within:shadow-[0_0_0_3px_rgba(30,111,106,0.10)]"
+      >
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}

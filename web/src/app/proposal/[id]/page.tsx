@@ -6,6 +6,7 @@ import { DEMO_MESSAGES } from "@/lib/demo-data";
 import MainChat from "@/components/chat/MainChat";
 import WorkspaceShell from "@/components/shell/WorkspaceShell";
 import JourneySheet from "@/components/shell/JourneySheet";
+import TourOverlay from "@/components/shell/TourOverlay";
 import WorkSheets from "@/components/context-panel/WorkSheets";
 import ThreadsSheet from "@/components/threads/ThreadsSheet";
 import type { ThreadSummary } from "@/components/threads/ThreadColumn";
@@ -264,6 +265,7 @@ export default function ProposalWorkspace() {
   const processedWorkflowMessageIdsRef = useRef<Set<string>>(new Set());
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus>("checking");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
 
   useEffect(() => {
     processedWorkflowMessageIdsRef.current.clear();
@@ -792,6 +794,12 @@ export default function ProposalWorkspace() {
         return;
       }
 
+      if (action === "start-tour" || action === "/tour") {
+        if (contextPanelOpen) toggleContextPanel();
+        setTourOpen(true);
+        return;
+      }
+
       if (action === "view-summary") {
         openContextPanel("operations");
         return;
@@ -1265,6 +1273,7 @@ export default function ProposalWorkspace() {
           />
         )}
         <WorkSheets onAction={handleAction} onClose={closeSheet} />
+        {tourOpen && <TourOverlay onClose={() => setTourOpen(false)} />}
       </WorkspaceShell>
 
       {settingsOpen && (

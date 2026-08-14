@@ -13,13 +13,14 @@ interface ActionDef {
 // @/lib/chat-actions (the deleted bar's source of truth) so labels and
 // command strings stay byte-identical to what the rest of the app expects.
 // Phase 1 keeps the upload entry point since WelcomeCard no longer renders
-// its own action grid.
+// its own action grid. "Take a tour" is an intentional phase-1-only
+// addition (not in getSuggestedActions) that launches the TourOverlay.
 const PHASE_ACTIONS: Record<Phase, ActionDef[]> = {
   1: [
+    { label: "Take a tour", action: "start-tour" },
     { label: "Quick Onboarding", action: "/onboarding" },
     { label: "Upload Past Proposal", action: "/learn-from-grant" },
     { label: "Explain ISF Process", action: "/isf-process" },
-    { label: "Connect Google Drive", action: "/connect-drive" },
   ],
   2: [
     { label: "View Requirements", action: "/requirements" },

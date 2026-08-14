@@ -53,6 +53,9 @@ export default function OnboardingExperience({ onComplete }: OnboardingExperienc
             We&apos;ll move through seven phases, but there&apos;s nothing to memorize —
             I&apos;ll tell you what matters when it matters.
           </p>
+          <p className="font-serif text-[17px] leading-relaxed text-ink">
+            When we get inside, you can take a guided tour of the workspace.
+          </p>
           {explaining && (
             <p className="font-serif text-[17px] leading-relaxed text-body">
               First I learn the ISF requirements and your past proposals, then I interview
