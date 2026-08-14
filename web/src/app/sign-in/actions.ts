@@ -10,8 +10,9 @@ import { prisma } from "@/lib/prisma";
 const DEFAULT_CALLBACK_URL = "/proposal/new";
 const MISSING_DATABASE_CONFIG = !process.env.DATABASE_URL || !process.env.DIRECT_URL;
 const LOCAL_ADMIN_SHORTCUT_ENABLED =
-  process.env.NODE_ENV === "development" &&
-  (process.env.ENABLE_LOCAL_ADMIN_SHORTCUT === "true" || MISSING_DATABASE_CONFIG);
+  MISSING_DATABASE_CONFIG &&
+  (process.env.NODE_ENV === "development" ||
+    process.env.ENABLE_LOCAL_ADMIN_SHORTCUT === "true");
 const DEV_FALLBACK_EMAIL = "admin@example.com";
 const DEV_FALLBACK_PASSWORD = "dev-password-1234";
 const MIN_PASSWORD_LENGTH = 8;
@@ -127,12 +128,8 @@ export async function signInWithLocalAdmin() {
     );
   }
 
-  const email =
-    process.env.ADMIN_SEED_EMAIL?.trim().toLowerCase() ??
-    (process.env.NODE_ENV === "development" ? DEV_FALLBACK_EMAIL : "");
-  const password =
-    process.env.ADMIN_SEED_PASSWORD ??
-    (process.env.NODE_ENV === "development" ? DEV_FALLBACK_PASSWORD : "");
+  const email = process.env.ADMIN_SEED_EMAIL?.trim().toLowerCase() ?? DEV_FALLBACK_EMAIL;
+  const password = process.env.ADMIN_SEED_PASSWORD ?? DEV_FALLBACK_PASSWORD;
   if (!email || !password) {
     buildErrorRedirect("Local admin credentials are missing in .env.local.", DEFAULT_CALLBACK_URL);
   }
