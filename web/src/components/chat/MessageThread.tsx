@@ -25,10 +25,10 @@ interface MessageThreadProps {
 function TypingIndicator() {
   return (
     <div className="flex justify-start my-3">
-      <div className="flex items-center gap-1 rounded-2xl rounded-bl-md bg-[#efe5d8] px-4 py-3">
-        <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-[#b59472] [animation-delay:0ms]" />
-        <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-[#b59472] [animation-delay:150ms]" />
-        <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-[#b59472] [animation-delay:300ms]" />
+      <div className="flex items-center gap-1 rounded-2xl rounded-es-md bg-bubble px-4 py-3">
+        <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-faint [animation-delay:0ms]" />
+        <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-faint [animation-delay:150ms]" />
+        <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-faint [animation-delay:300ms]" />
       </div>
     </div>
   );
@@ -127,7 +127,7 @@ export default function MessageThread({ messages, onAction, isLoading, phase }: 
     <div className="flex-1 min-h-0 w-full max-w-[680px] mx-auto overflow-y-auto px-4 pb-4 pt-2">
       {hasSubstantiveHistory && hiddenWelcomeMessages.length > 0 && (
         <details className="group mb-2">
-          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-[#d8c7b0] bg-white/90 px-3 py-1 text-xs font-medium text-[#5f5244] transition-colors hover:bg-[#f8efe3] [&::-webkit-details-marker]:hidden">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-hairline-strong bg-surface px-3 py-1 text-xs font-medium text-body transition-colors hover:bg-bubble [&::-webkit-details-marker]:hidden">
             <Sparkles size={12} />
             Show quick-start actions
           </summary>
@@ -137,7 +137,7 @@ export default function MessageThread({ messages, onAction, isLoading, phase }: 
         </details>
       )}
       {visibleMessages.length === 0 && (
-        <div className="flex h-full items-center justify-center text-base text-[#766554]">
+        <div className="flex h-full items-center justify-center text-base text-muted">
           Starting your grant writing session...
         </div>
       )}

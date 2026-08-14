@@ -1188,8 +1188,8 @@ export default function ProposalWorkspace() {
 
   if (onboardingStatus === "checking") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#f8f4ee_0%,#efe9df_100%)]">
-        <p className="text-sm font-medium text-[#6d5841]">Loading workspace...</p>
+      <div className="flex min-h-screen items-center justify-center bg-canvas">
+        <p className="text-sm font-medium text-muted">Loading workspace...</p>
       </div>
     );
   }
