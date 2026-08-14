@@ -2,11 +2,9 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import ChatInput from "@/components/chat/ChatInput";
+import ChatPersistenceBanner from "@/components/chat/ChatPersistenceBanner";
 import MainChat from "@/components/chat/MainChat";
 import MessageThread from "@/components/chat/MessageThread";
-import NextActionBanner from "@/components/chat/NextActionBanner";
-import SuggestedActionsBar from "@/components/chat/SuggestedActionsBar";
-import WorkflowTransparencyDeck from "@/components/chat/WorkflowTransparencyDeck";
 import ChallengeCard from "@/components/chat/messages/ChallengeCard";
 import ComplianceReportCard from "@/components/chat/messages/ComplianceReportCard";
 import DraftReviewBlock from "@/components/chat/messages/DraftReviewBlock";
@@ -34,7 +32,7 @@ import SubProgress from "@/components/left-rail/SubProgress";
 import OnboardingExperience from "@/components/onboarding/OnboardingExperience";
 import ThreadColumn from "@/components/threads/ThreadColumn";
 import { useProposalStore } from "@/lib/store";
-import { patchProposalStore, resetProposalStore } from "@/test/store-fixture";
+import { resetProposalStore } from "@/test/store-fixture";
 import type { ChatMessage, ComplianceIssue } from "@/lib/types";
 
 const failureIssue: ComplianceIssue = {
@@ -55,29 +53,44 @@ describe("component coverage and failure/security behaviors", () => {
     const onSend = vi.fn();
     render(<ChatInput onSend={onSend} />);
 
-    const box = screen.getByPlaceholderText(/ask in plain language/i);
+    const box = screen.getByPlaceholderText(/reply to granite/i);
     await user.type(box, "  hello team  {enter}");
     expect(onSend).toHaveBeenCalledWith("hello team");
   });
 
-  it("MainChat renders workspace shell", () => {
-    render(<MainChat onAction={vi.fn()} />);
-    expect(screen.getByText(/granite workspace/i)).toBeInTheDocument();
-    expect(screen.getByText(/current thread/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /clear conversation/i })).toBeInTheDocument();
+  it("ChatPersistenceBanner offers accept/dismiss actions", async () => {
+    const user = userEvent.setup();
+    const onAccept = vi.fn();
+    const onDismiss = vi.fn();
+    render(<ChatPersistenceBanner onAccept={onAccept} onDismiss={onDismiss} />);
+
+    expect(screen.getByText(/save chat history to your account/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /enable saving/i }));
+    expect(onAccept).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole("button", { name: /not now/i }));
+    expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
-  it("MainChat clear button emits clear-conversation action", async () => {
-    const user = userEvent.setup();
-    const onAction = vi.fn();
+  it("MainChat renders without the deleted banner stack or clear-conversation control", () => {
+    render(<MainChat onAction={vi.fn()} />);
+    expect(screen.queryByText(/granite workspace/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /clear conversation/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/no special commands required/i)).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/reply to granite/i)).toBeInTheDocument();
+  });
 
-    patchProposalStore({
-      messages: [{ id: "u1", type: "text", role: "user", content: "Keep this scoped." }],
-    });
-
-    render(<MainChat onAction={onAction} />);
-    await user.click(screen.getByRole("button", { name: /clear conversation/i }));
-    expect(onAction).toHaveBeenCalledWith("clear-conversation");
+  it("MainChat renders the inline persistence card inline when requested", () => {
+    const onAccept = vi.fn();
+    const onDismiss = vi.fn();
+    render(
+      <MainChat
+        onAction={vi.fn()}
+        showPersistenceBanner
+        onAcceptPersistence={onAccept}
+        onDismissPersistence={onDismiss}
+      />
+    );
+    expect(screen.getByText(/save chat history to your account/i)).toBeInTheDocument();
   });
 
   it("MessageThread renders text and escapes script tags", () => {
@@ -98,25 +111,6 @@ describe("component coverage and failure/security behaviors", () => {
     expect(screen.getByText(/i'm granite/i)).not.toBeVisible();
     expect(screen.getByText(/show quick-start actions/i)).toBeInTheDocument();
     expect(screen.getByText(/next step guidance/i)).toBeInTheDocument();
-  });
-
-  it("NextActionBanner dismisses safely", async () => {
-    const user = userEvent.setup();
-    render(<NextActionBanner text="Complete profile" />);
-    await user.click(screen.getByLabelText(/dismiss/i));
-    expect(screen.queryByText(/complete profile/i)).not.toBeInTheDocument();
-  });
-
-  it("SuggestedActionsBar renders phase actions", () => {
-    render(<SuggestedActionsBar onAction={vi.fn()} />);
-    expect(screen.getByRole("button", { name: /quick onboarding/i })).toBeInTheDocument();
-  });
-
-  it("WorkflowTransparencyDeck expands dashboard view", async () => {
-    const user = userEvent.setup();
-    render(<WorkflowTransparencyDeck onAction={vi.fn()} />);
-    await user.click(screen.getByRole("button", { name: /open dashboard/i }));
-    expect(screen.getByText(/transparent process view/i)).toBeInTheDocument();
   });
 
   it("ChallengeCard emits action choices", async () => {

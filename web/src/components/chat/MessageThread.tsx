@@ -2,7 +2,7 @@
 
 import { Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
-import type { ChatMessage } from "@/lib/types";
+import type { ChatMessage, Phase } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
 import ChallengeCard from "./messages/ChallengeCard";
 import InterviewQuestionBlock from "./messages/InterviewQuestionBlock";
@@ -13,11 +13,13 @@ import PhaseTransitionCard from "./messages/PhaseTransitionCard";
 import WelcomeCard from "./messages/WelcomeCard";
 import ResumeSessionCard from "./messages/ResumeSessionCard";
 import FileUploadCard from "./messages/FileUploadCard";
+import InlineActions from "./InlineActions";
 
 interface MessageThreadProps {
   messages: ChatMessage[];
   onAction: (action: string) => void;
   isLoading?: boolean;
+  phase?: Phase;
 }
 
 function TypingIndicator() {
@@ -96,7 +98,7 @@ function renderMessage(message: ChatMessage, onAction: (action: string) => void)
   }
 }
 
-export default function MessageThread({ messages, onAction, isLoading }: MessageThreadProps) {
+export default function MessageThread({ messages, onAction, isLoading, phase }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const hiddenWelcomeMessages = useMemo(
     () => messages.filter((message) => message.type === "welcome"),
@@ -122,7 +124,7 @@ export default function MessageThread({ messages, onAction, isLoading }: Message
   }, [isLoading, shouldAutoScrollToBottom, visibleMessages.length, lastContentLength]);
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto bg-gradient-to-b from-[#fdf9f3] via-[#faf4ec] to-[#f4ecdf] px-4 pb-4 pt-2">
+    <div className="flex-1 min-h-0 w-full max-w-[680px] mx-auto overflow-y-auto bg-gradient-to-b from-[#fdf9f3] via-[#faf4ec] to-[#f4ecdf] px-4 pb-4 pt-2">
       {hasSubstantiveHistory && hiddenWelcomeMessages.length > 0 && (
         <details className="group mb-2">
           <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-[#d8c7b0] bg-white/90 px-3 py-1 text-xs font-medium text-[#5f5244] transition-colors hover:bg-[#f8efe3] [&::-webkit-details-marker]:hidden">
@@ -140,6 +142,9 @@ export default function MessageThread({ messages, onAction, isLoading }: Message
         </div>
       )}
       {visibleMessages.map((msg) => renderMessage(msg, onAction))}
+      {phase !== undefined && !isLoading && lastMsg?.role === "agent" && (
+        <InlineActions phase={phase} onAction={onAction} />
+      )}
       {isLoading &&
         (() => {
           const last = visibleMessages[visibleMessages.length - 1];
