@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
+import FirstRunSplash from "@/components/shared/FirstRunSplash";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -25,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${manrope.variable} ${sourceSerif.variable} antialiased font-sans`}>
+        <FirstRunSplash />
         {children}
       </body>
     </html>
