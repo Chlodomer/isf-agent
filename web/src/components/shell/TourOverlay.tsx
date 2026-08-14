@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 
 interface TourOverlayProps {
   onClose: () => void;
@@ -46,9 +46,8 @@ const STEPS: TourStep[] = [
 ];
 
 const SPOTLIGHT_PADDING = 6;
-const CARD_WIDTH = 384;
-const CARD_HEIGHT_ESTIMATE = 220;
-const VIEWPORT_MARGIN = 16;
+const GAP = 16;
+const MARGIN = 12;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), Math.max(min, max));
@@ -59,40 +58,49 @@ interface CardPosition {
   left: number;
 }
 
-function computeCardPosition(rect: DOMRect, isRtl: boolean): CardPosition {
+// Positions the card using the card's *real* measured dimensions (from a
+// two-pass render — see TourOverlay's useLayoutEffect) so it can never
+// overflow the viewport, unlike the old fixed-size estimate.
+function computeCardPosition(targetRect: DOMRect, cardWidth: number, cardHeight: number): CardPosition {
   const vw = typeof window !== "undefined" ? window.innerWidth : 1024;
   const vh = typeof window !== "undefined" ? window.innerHeight : 768;
-  const targetCenterX = rect.left + rect.width / 2;
 
-  const placement: "start" | "end" | "below" =
-    targetCenterX < vw * 0.25 ? "end" : targetCenterX > vw * 0.75 ? "start" : "below";
+  const maxLeft = Math.max(MARGIN, vw - cardWidth - MARGIN);
+  const centeredLeft = clamp(targetRect.left + targetRect.width / 2 - cardWidth / 2, MARGIN, maxLeft);
 
-  if (placement === "below") {
-    return {
-      top: clamp(rect.bottom + VIEWPORT_MARGIN, VIEWPORT_MARGIN, vh - VIEWPORT_MARGIN),
-      left: clamp(
-        targetCenterX - CARD_WIDTH / 2,
-        VIEWPORT_MARGIN,
-        Math.max(VIEWPORT_MARGIN, vw - CARD_WIDTH - VIEWPORT_MARGIN)
-      ),
-    };
+  // Preferred: below the target.
+  const belowTop = targetRect.bottom + GAP;
+  if (belowTop + cardHeight <= vh - MARGIN) {
+    return { top: belowTop, left: centeredLeft };
   }
 
-  // "end" means physically to the right in LTR, left in RTL (and vice versa for "start").
-  const placeOnPhysicalRight = placement === "end" ? !isRtl : isRtl;
-  const left = placeOnPhysicalRight
-    ? clamp(rect.right + VIEWPORT_MARGIN, VIEWPORT_MARGIN, vw - CARD_WIDTH - VIEWPORT_MARGIN)
-    : clamp(rect.left - VIEWPORT_MARGIN - CARD_WIDTH, VIEWPORT_MARGIN, vw - CARD_WIDTH - VIEWPORT_MARGIN);
+  // Next: above the target.
+  const aboveTop = targetRect.top - cardHeight - GAP;
+  if (aboveTop >= MARGIN) {
+    return { top: aboveTop, left: centeredLeft };
+  }
 
-  return {
-    top: clamp(rect.top, VIEWPORT_MARGIN, vh - VIEWPORT_MARGIN - CARD_HEIGHT_ESTIMATE),
-    left,
-  };
+  // Fall back: vertically centered beside the target, whichever side has more room.
+  const maxTop = Math.max(MARGIN, vh - cardHeight - MARGIN);
+  const centeredTop = clamp(targetRect.top + targetRect.height / 2 - cardHeight / 2, MARGIN, maxTop);
+
+  const spaceRight = vw - targetRect.right;
+  const spaceLeft = targetRect.left;
+  const left =
+    spaceRight >= spaceLeft
+      ? clamp(targetRect.right + GAP, MARGIN, maxLeft)
+      : clamp(targetRect.left - GAP - cardWidth, MARGIN, maxLeft);
+
+  return { top: centeredTop, left };
 }
 
 export default function TourOverlay({ onClose }: TourOverlayProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
+  // Final, measured position. Null while the card is doing its invisible
+  // "measure" pass so it never paints at a stale/estimated spot.
+  const [cardPos, setCardPos] = useState<CardPosition | null>(null);
+  const cardRef = useRef<HTMLDivElement | null>(null);
 
   // Resolve the current step's anchor. If it's missing (e.g. a rail hidden
   // on a narrow viewport), skip forward automatically; if nothing anchors
@@ -106,6 +114,7 @@ export default function TourOverlay({ onClose }: TourOverlayProps) {
     const el = document.querySelector(`[data-tour="${step.id}"]`);
     if (!el) {
       setRect(null);
+      setCardPos(null);
       if (stepIndex >= STEPS.length - 1) {
         onClose();
       } else {
@@ -113,14 +122,29 @@ export default function TourOverlay({ onClose }: TourOverlayProps) {
       }
       return;
     }
+    // Reset to the invisible measuring pass for the new step; the
+    // layout effect below re-measures the card and reveals it.
+    setCardPos(null);
     setRect(el.getBoundingClientRect());
   }, [stepIndex, onClose]);
+
+  // Two-pass placement: the card first renders invisibly at (0, 0) so we
+  // can measure its *real* width/height, then we compute its final
+  // position from those real dimensions and reveal it. This runs before
+  // paint, so the invisible pass is never visible to the user.
+  useLayoutEffect(() => {
+    if (!rect || !cardRef.current) return;
+    const cardRect = cardRef.current.getBoundingClientRect();
+    setCardPos(computeCardPosition(rect, cardRect.width, cardRect.height));
+  }, [rect]);
 
   useEffect(() => {
     const handleResize = () => {
       const step = STEPS[stepIndex];
       if (!step) return;
       const el = document.querySelector(`[data-tour="${step.id}"]`);
+      // Only update the target rect — the layout effect above re-measures
+      // the (already visible) card and repositions it, no re-hide needed.
       if (el) setRect(el.getBoundingClientRect());
     };
     window.addEventListener("resize", handleResize);
@@ -143,7 +167,6 @@ export default function TourOverlay({ onClose }: TourOverlayProps) {
   if (!step || !rect) return null;
 
   const isLastStep = stepIndex === STEPS.length - 1;
-  const isRtl = typeof document !== "undefined" && document.documentElement.dir === "rtl";
 
   const outline = {
     top: rect.top - SPOTLIGHT_PADDING,
@@ -152,7 +175,11 @@ export default function TourOverlay({ onClose }: TourOverlayProps) {
     height: rect.height + SPOTLIGHT_PADDING * 2,
   };
 
-  const cardPosition = computeCardPosition(rect, isRtl);
+  // Until the measuring pass completes, keep the card invisible at the
+  // origin rather than guessing a position from an estimated size.
+  const cardStyle: CSSProperties = cardPos
+    ? { top: cardPos.top, left: cardPos.left, visibility: "visible" }
+    : { top: 0, left: 0, visibility: "hidden" };
 
   const handleNext = () => {
     if (isLastStep) {
@@ -188,8 +215,9 @@ export default function TourOverlay({ onClose }: TourOverlayProps) {
       />
 
       <div
+        ref={cardRef}
         className="fixed max-w-sm rounded-[12px] border border-hairline-strong bg-surface px-6 py-5 shadow-[0_24px_64px_rgba(26,24,21,0.12)]"
-        style={{ top: cardPosition.top, left: cardPosition.left }}
+        style={cardStyle}
       >
         <div className="ui-label text-muted">
           Tour · {stepIndex + 1} of {STEPS.length}
