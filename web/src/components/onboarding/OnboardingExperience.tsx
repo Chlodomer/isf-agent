@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Logo from "@/components/shared/Logo";
+import BrandHero from "@/components/shared/BrandHero";
 
 export interface OnboardingProfile {
   name: string;
@@ -40,32 +41,35 @@ export default function OnboardingExperience({ onComplete }: OnboardingExperienc
       </div>
 
       <main className="flex min-w-0 flex-1 flex-col items-center px-4 lg:px-7">
-        <div className="flex w-full max-w-[560px] flex-1 flex-col gap-5 overflow-y-auto pt-16">
-          <p className="font-serif text-[15px] leading-relaxed text-ink">
+        <div className="flex w-full max-w-[680px] flex-1 flex-col gap-5 overflow-y-auto">
+          <div className="pt-10 pb-6">
+            <BrandHero size="md" />
+          </div>
+          <p className="font-serif text-[17px] leading-relaxed text-ink">
             Welcome. I&apos;m Granite — I help you think through and write an ISF proposal
             that can survive its reviewers.
           </p>
-          <p className="font-serif text-[15px] leading-relaxed text-ink">
+          <p className="font-serif text-[17px] leading-relaxed text-ink">
             We&apos;ll move through seven phases, but there&apos;s nothing to memorize —
             I&apos;ll tell you what matters when it matters.
           </p>
           {explaining && (
-            <p className="font-serif text-[15px] leading-relaxed text-body">
+            <p className="font-serif text-[17px] leading-relaxed text-body">
               First I learn the ISF requirements and your past proposals, then I interview
               you about your research, draft each section with you, and validate the result
               against the ISF checklist. You talk; I keep track of everything else.
             </p>
           )}
           {step === "name" ? (
-            <p className="font-serif text-[15px] leading-relaxed text-ink">
+            <p className="font-serif text-[17px] leading-relaxed text-ink">
               What should I call you?
             </p>
           ) : (
             <>
-              <p className="self-end rounded-[16px] rounded-ee-[4px] bg-bubble px-4 py-2.5 font-sans text-[13.5px] text-body">
+              <p className="self-end rounded-[16px] rounded-ee-[4px] bg-bubble px-4 py-2.5 font-sans text-[15px] text-body">
                 {name}
               </p>
-              <p className="font-serif text-[15px] leading-relaxed text-ink">
+              <p className="font-serif text-[17px] leading-relaxed text-ink">
                 Good to meet you, {name}. And which institution are you writing from?
               </p>
             </>
@@ -86,7 +90,7 @@ export default function OnboardingExperience({ onComplete }: OnboardingExperienc
           </div>
         </div>
 
-        <div className="w-full max-w-[560px] pb-5 pt-4">
+        <div className="w-full max-w-[680px] pb-5 pt-4">
           <input
             value={value}
             onChange={(event) => setValue(event.target.value)}
@@ -95,7 +99,7 @@ export default function OnboardingExperience({ onComplete }: OnboardingExperienc
             }}
             placeholder={step === "name" ? "Your name" : "Your institution"}
             autoFocus
-            className="w-full rounded-[24px] border border-hairline-strong bg-surface px-4 py-3 font-sans text-[13.5px] text-body outline-none placeholder:text-faint focus:border-teal focus:shadow-[0_0_0_3px_rgba(30,111,106,0.10)]"
+            className="w-full rounded-[24px] border border-hairline-strong bg-surface px-4 py-3 font-sans text-[15px] text-body outline-none placeholder:text-faint focus:border-teal focus:shadow-[0_0_0_3px_rgba(30,111,106,0.10)]"
           />
         </div>
       </main>

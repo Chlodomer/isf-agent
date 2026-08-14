@@ -33,7 +33,7 @@ export default function DraftReviewBlock({
         </span>
         <button
           onClick={() => onAction?.("open-draft")}
-          className="shrink-0 font-sans text-[12.5px] text-muted hover:text-ink transition-colors"
+          className="shrink-0 font-sans text-[13.5px] text-muted hover:text-ink transition-colors"
         >
           Open in draft →
         </button>
@@ -43,12 +43,12 @@ export default function DraftReviewBlock({
         {wordCount.toLocaleString()} words &middot; ~{pageEstimate} pages
       </p>
 
-      <p className="mt-3 font-serif text-[15px] leading-relaxed text-ink">{content}</p>
+      <p className="mt-3 font-serif text-[17px] leading-relaxed text-ink">{content}</p>
 
       {patternsApplied.length > 0 && (
         <div className="mt-3">
           <p className="ui-label text-muted">Patterns applied</p>
-          <ul className="mt-1 space-y-0.5 font-sans text-[13px] text-body">
+          <ul className="mt-1 space-y-0.5 font-sans text-[14px] text-body">
             {patternsApplied.map((p, i) => (
               <li key={i}>– {p}</li>
             ))}
@@ -59,7 +59,7 @@ export default function DraftReviewBlock({
       {concernsAddressed.length > 0 && (
         <div className="mt-3">
           <p className="ui-label text-muted">Verified against</p>
-          <ul className="mt-1 space-y-0.5 font-sans text-[13px] text-body">
+          <ul className="mt-1 space-y-0.5 font-sans text-[14px] text-body">
             {concernsAddressed.map((c, i) => (
               <li key={i}>– {c}</li>
             ))}
@@ -67,7 +67,7 @@ export default function DraftReviewBlock({
         </div>
       )}
 
-      <div className="mt-4 flex gap-3.5 border-t border-hairline pt-3 font-sans text-[12.5px]">
+      <div className="mt-4 flex gap-3.5 border-t border-hairline pt-3 font-sans text-[13.5px]">
         <button
           onClick={() => onAction?.(`approve:${sectionName}`)}
           className="border-b border-ink text-ink"

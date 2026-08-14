@@ -14,6 +14,7 @@ import LearningSummaryCard from "@/components/chat/messages/LearningSummaryCard"
 import PhaseTransitionCard from "@/components/chat/messages/PhaseTransitionCard";
 import ResumeSessionCard from "@/components/chat/messages/ResumeSessionCard";
 import WelcomeCard from "@/components/chat/messages/WelcomeCard";
+import BrandHero from "@/components/shared/BrandHero";
 import ComplianceDashboardPanel from "@/components/context-panel/ComplianceDashboardPanel";
 import DraftViewerPanel from "@/components/context-panel/DraftViewerPanel";
 import InterviewTrackerPanel from "@/components/context-panel/InterviewTrackerPanel";
@@ -219,6 +220,12 @@ describe("component coverage and failure/security behaviors", () => {
   it("WelcomeCard renders a short bare greeting", () => {
     render(<WelcomeCard />);
     expect(screen.getByText(/i'm granite/i)).toBeInTheDocument();
+  });
+
+  it("BrandHero renders the product name and tagline", () => {
+    render(<BrandHero />);
+    expect(screen.getByRole("heading", { name: "Granite" })).toBeInTheDocument();
+    expect(screen.getByText(/isf grant writing, thought through/i)).toBeInTheDocument();
   });
 
   it("ComplianceDashboardPanel handles no-run state", () => {

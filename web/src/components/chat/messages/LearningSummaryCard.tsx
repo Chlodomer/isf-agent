@@ -28,9 +28,9 @@ export default function LearningSummaryCard({
 
   return (
     <CardRule tone="learning" label={`Learned from ${proposalName}`}>
-      <p className="font-serif text-[15px] leading-relaxed text-ink">{summary}</p>
+      <p className="font-serif text-[17px] leading-relaxed text-ink">{summary}</p>
 
-      <div className="flex gap-3.5 font-sans text-[12.5px] pt-2">
+      <div className="flex gap-3.5 font-sans text-[13.5px] pt-2">
         <button
           onClick={() => onAction?.("view-learnings")}
           className="border-b border-ink text-ink"

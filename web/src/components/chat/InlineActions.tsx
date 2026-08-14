@@ -70,7 +70,7 @@ export default function InlineActions({ phase, onAction }: InlineActionsProps) {
     <div
       role="group"
       aria-label={getNextActionText(phase)}
-      className="flex flex-wrap gap-x-3.5 gap-y-2 pt-1 font-sans text-[12.5px]"
+      className="flex flex-wrap gap-x-3.5 gap-y-2 pt-1 font-sans text-[13.5px]"
     >
       {actions.map((entry, index) => (
         <button

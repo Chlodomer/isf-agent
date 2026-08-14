@@ -20,13 +20,13 @@ export default function ChallengeCard({
 }: ChallengeCardProps) {
   return (
     <CardRule tone="challenge" label={`Challenge · ${category} · Intensity ${intensity}/3`}>
-      <p className="font-serif text-[15px] leading-relaxed text-ink">
+      <p className="font-serif text-[17px] leading-relaxed text-ink">
         &ldquo;{question}&rdquo;
       </p>
 
-      <p className="mt-2 font-sans text-[13px] text-muted">{context}</p>
+      <p className="mt-2 font-sans text-[14px] text-muted">{context}</p>
 
-      <div className="flex gap-3.5 font-sans text-[12.5px] pt-2">
+      <div className="flex gap-3.5 font-sans text-[13.5px] pt-2">
         <button onClick={() => onAction?.("answer")} className="border-b border-ink text-ink">
           Answer in chat
         </button>

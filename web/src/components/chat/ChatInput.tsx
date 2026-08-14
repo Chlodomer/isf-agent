@@ -59,20 +59,20 @@ export default function ChatInput({
 
   return (
     <div
-      className="relative mx-auto w-full max-w-[680px] px-4 pb-4 pt-2"
+      className="relative mx-auto w-full max-w-[840px] px-4 pb-4 pt-2"
       onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
       onDragLeave={() => setIsDragOver(false)}
       onDrop={handleDrop}
     >
       {isDragOver && (
         <div className="absolute inset-4 z-10 flex items-center justify-center rounded-[24px] border-2 border-dashed border-hairline-strong bg-surface/95">
-          <p className="font-sans text-[13.5px] font-medium text-ink">
+          <p className="font-sans text-[15px] font-medium text-ink">
             Drop your proposal, CV, or review file here
           </p>
         </div>
       )}
 
-      <div className="flex items-end gap-2 rounded-[24px] border border-hairline-strong bg-surface px-4 py-3 focus-within:border-teal focus-within:shadow-[0_0_0_3px_rgba(30,111,106,0.10)]">
+      <div className="flex items-end gap-2 rounded-[24px] border border-hairline-strong bg-surface px-5 py-3.5 focus-within:border-teal focus-within:shadow-[0_0_0_3px_rgba(30,111,106,0.10)]">
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
@@ -99,7 +99,7 @@ export default function ChatInput({
           placeholder="Reply to Granite…"
           disabled={disabled}
           rows={1}
-          className="flex-1 resize-none bg-transparent font-sans text-[13.5px] text-body placeholder:text-faint focus:outline-none disabled:opacity-50"
+          className="flex-1 resize-none bg-transparent font-sans text-[15px] text-body placeholder:text-faint focus:outline-none disabled:opacity-50"
         />
 
         <button

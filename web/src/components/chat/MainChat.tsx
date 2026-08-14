@@ -161,7 +161,7 @@ export default function MainChat({
         phase={phase}
       />
       {showPersistenceBanner && onAcceptPersistence && onDismissPersistence && (
-        <div className="mx-auto w-full max-w-[680px] px-4">
+        <div className="mx-auto w-full max-w-[840px] px-4">
           <ChatPersistenceBanner
             onAccept={onAcceptPersistence}
             onDismiss={onDismissPersistence}

@@ -69,12 +69,12 @@ export default function Sheet({ label, title, onClose, footer, children }: Sheet
       />
       <aside
         ref={asideRef}
-        className="absolute inset-y-0 end-0 flex w-full max-w-[640px] flex-col border-s border-hairline-strong bg-surface sheet-panel motion-safe:animate-[sheet-in_200ms_ease-out] lg:w-[58%]"
+        className="absolute inset-y-0 end-0 flex w-full max-w-[720px] flex-col border-s border-hairline-strong bg-surface sheet-panel motion-safe:animate-[sheet-in_200ms_ease-out] lg:w-[58%]"
       >
         <header className="flex items-baseline justify-between border-b border-hairline px-7 pb-3 pt-5">
           <div>
             <div className="ui-label text-muted">{label}</div>
-            <h2 className="mt-0.5 font-serif text-lg text-ink">{title}</h2>
+            <h2 className="mt-0.5 font-serif text-xl text-ink">{title}</h2>
           </div>
           <button
             ref={closeButtonRef}

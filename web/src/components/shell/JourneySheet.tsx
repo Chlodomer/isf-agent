@@ -113,7 +113,7 @@ export default function JourneySheet({ onClose, onAction }: JourneySheetProps) {
         })}
       </div>
 
-      <p data-testid="journey-status" className="mt-6 font-serif text-[15px] leading-relaxed text-body">
+      <p data-testid="journey-status" className="mt-6 font-serif text-[16px] leading-relaxed text-body">
         {statusSentence(phase, approvedCount, draftedCount, interviewAnswered)}
       </p>
 

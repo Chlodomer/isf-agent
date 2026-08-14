@@ -14,6 +14,7 @@ import WelcomeCard from "./messages/WelcomeCard";
 import ResumeSessionCard from "./messages/ResumeSessionCard";
 import FileUploadCard from "./messages/FileUploadCard";
 import InlineActions from "./InlineActions";
+import BrandHero from "../shared/BrandHero";
 
 interface MessageThreadProps {
   messages: ChatMessage[];
@@ -57,7 +58,7 @@ function TextMessage({ message }: { message: Extract<ChatMessage, { type: "text"
   if (isUser) {
     return (
       <div className="flex justify-end my-3">
-        <div className="max-w-[70%] self-end rounded-[16px] rounded-ee-[4px] bg-bubble px-4 py-2.5 font-sans text-[13.5px] text-body">
+        <div className="max-w-[70%] self-end rounded-[16px] rounded-ee-[4px] bg-bubble px-4 py-2.5 font-sans text-[15px] text-body">
           <ReactMarkdown components={markdownComponents}>{message.content}</ReactMarkdown>
         </div>
       </div>
@@ -65,7 +66,7 @@ function TextMessage({ message }: { message: Extract<ChatMessage, { type: "text"
   }
 
   return (
-    <div className="my-3 font-serif text-[15px] leading-relaxed text-ink">
+    <div className="my-3 font-serif text-[17px] leading-relaxed text-ink">
       <ReactMarkdown components={markdownComponents}>{message.content}</ReactMarkdown>
     </div>
   );
@@ -107,6 +108,8 @@ export default function MessageThread({ messages, onAction, isLoading, phase }: 
   const hasSubstantiveHistory = messages.some(
     (message) => message.type !== "welcome" && message.type !== "file_upload"
   );
+  const isFreshThread =
+    messages.length > 0 && messages.every((message) => message.type === "welcome");
 
   const shouldAutoScrollToBottom = hasSubstantiveHistory || Boolean(isLoading);
   const visibleMessages = hasSubstantiveHistory
@@ -124,7 +127,12 @@ export default function MessageThread({ messages, onAction, isLoading, phase }: 
   }, [isLoading, shouldAutoScrollToBottom, visibleMessages.length, lastContentLength]);
 
   return (
-    <div className="flex-1 min-h-0 w-full max-w-[680px] mx-auto overflow-y-auto px-4 pb-4 pt-2">
+    <div className="flex-1 min-h-0 w-full max-w-[840px] mx-auto overflow-y-auto px-4 pb-4 pt-2">
+      {isFreshThread && (
+        <div className="pt-[10vh] pb-8">
+          <BrandHero />
+        </div>
+      )}
       {hasSubstantiveHistory && hiddenWelcomeMessages.length > 0 && (
         <details className="group mb-2">
           <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-hairline-strong bg-surface px-3 py-1 text-xs font-medium text-body transition-colors hover:bg-bubble [&::-webkit-details-marker]:hidden">

@@ -29,10 +29,10 @@ export default function ComplianceReportCard({
       tone={hasFailures ? "blocker" : "ink"}
       label={hasFailures ? `Compliance · ${failed.length} blockers` : "Compliance · all clear"}
     >
-      <p className="font-serif text-[15px] leading-relaxed text-ink">{summary}</p>
+      <p className="font-serif text-[17px] leading-relaxed text-ink">{summary}</p>
 
       {failed.length > 0 && (
-        <ul className="mt-2 space-y-1 font-sans text-[13px] text-muted">
+        <ul className="mt-2 space-y-1 font-sans text-[14px] text-muted">
           {failed.map((issue) => (
             <li key={issue.id} className="flex flex-wrap items-baseline gap-x-2">
               <span>
@@ -50,7 +50,7 @@ export default function ComplianceReportCard({
       )}
 
       {warnings.length > 0 && (
-        <ul className="mt-2 space-y-1 font-sans text-[13px] text-muted">
+        <ul className="mt-2 space-y-1 font-sans text-[14px] text-muted">
           {warnings.map((issue) => (
             <li key={issue.id}>
               {issue.name}: {issue.description}
@@ -59,7 +59,7 @@ export default function ComplianceReportCard({
         </ul>
       )}
 
-      <div className="flex gap-3.5 font-sans text-[12.5px] pt-2">
+      <div className="flex gap-3.5 font-sans text-[13.5px] pt-2">
         <button onClick={() => onAction?.("view-report")} className="border-b border-ink text-ink">
           Full report
         </button>

@@ -29,29 +29,29 @@ export default function InterviewQuestionBlock({
 
   return (
     <CardRule tone="ink" label={`Interview · ${sectionLabel} · ${questionNum} of ${totalInSection}`}>
-      <p className="font-serif text-[15px] leading-relaxed text-ink">{question}</p>
+      <p className="font-serif text-[17px] leading-relaxed text-ink">{question}</p>
 
       {guidance && (
-        <p className="mt-2 font-sans text-[13px] text-muted leading-relaxed">{guidance}</p>
+        <p className="mt-2 font-sans text-[14px] text-muted leading-relaxed">{guidance}</p>
       )}
 
       {example && (
         <div className="mt-2">
           <button
             onClick={() => setExampleOpen(!exampleOpen)}
-            className="font-sans text-[12.5px] text-muted hover:text-ink transition-colors"
+            className="font-sans text-[13.5px] text-muted hover:text-ink transition-colors"
           >
             {exampleOpen ? "Hide example" : "Show example"}
           </button>
           {exampleOpen && (
-            <p className="mt-1.5 font-sans text-[13px] italic text-muted leading-relaxed">
+            <p className="mt-1.5 font-sans text-[14px] italic text-muted leading-relaxed">
               {example}
             </p>
           )}
         </div>
       )}
 
-      <div className="flex gap-3.5 font-sans text-[12.5px] pt-2">
+      <div className="flex gap-3.5 font-sans text-[13.5px] pt-2">
         <button
           onClick={() => onAction?.("skip")}
           className="text-muted hover:text-ink transition-colors"
