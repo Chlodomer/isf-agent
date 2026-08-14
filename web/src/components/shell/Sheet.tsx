@@ -26,7 +26,7 @@ export default function Sheet({ label, title, onClose, footer, children }: Sheet
         onClick={onClose}
         className="absolute inset-0 bg-canvas/60"
       />
-      <aside className="absolute inset-y-0 end-0 flex w-full max-w-[640px] flex-col border-s border-hairline-strong bg-surface shadow-[-24px_0_48px_rgba(26,24,21,0.10)] motion-safe:animate-[sheet-in_200ms_ease-out] lg:w-[58%]">
+      <aside className="absolute inset-y-0 end-0 flex w-full max-w-[640px] flex-col border-s border-hairline-strong bg-surface sheet-panel motion-safe:animate-[sheet-in_200ms_ease-out] lg:w-[58%]">
         <header className="flex items-baseline justify-between border-b border-hairline px-7 pb-3 pt-5">
           <div>
             <div className="ui-label text-muted">{label}</div>

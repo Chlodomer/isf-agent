@@ -73,6 +73,14 @@ h3,
   background-color: var(--color-faint);
 }
 
+.sheet-panel {
+  box-shadow: -24px 0 48px rgba(26, 24, 21, 0.1);
+}
+
+[dir="rtl"] .sheet-panel {
+  box-shadow: 24px 0 48px rgba(26, 24, 21, 0.1);
+}
+
 @keyframes sheet-in {
   from {
     transform: translateX(24px);
@@ -84,7 +92,7 @@ h3,
   }
 }
 
-[dir="rtl"] .motion-safe\:animate-\[sheet-in_200ms_ease-out\] {
+[dir="rtl"] .sheet-panel {
   animation-name: sheet-in-rtl;
 }
 
