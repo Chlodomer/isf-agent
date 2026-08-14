@@ -124,7 +124,7 @@ export default function MessageThread({ messages, onAction, isLoading, phase }: 
   }, [isLoading, shouldAutoScrollToBottom, visibleMessages.length, lastContentLength]);
 
   return (
-    <div className="flex-1 min-h-0 w-full max-w-[680px] mx-auto overflow-y-auto bg-gradient-to-b from-[#fdf9f3] via-[#faf4ec] to-[#f4ecdf] px-4 pb-4 pt-2">
+    <div className="flex-1 min-h-0 w-full max-w-[680px] mx-auto overflow-y-auto px-4 pb-4 pt-2">
       {hasSubstantiveHistory && hiddenWelcomeMessages.length > 0 && (
         <details className="group mb-2">
           <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-[#d8c7b0] bg-white/90 px-3 py-1 text-xs font-medium text-[#5f5244] transition-colors hover:bg-[#f8efe3] [&::-webkit-details-marker]:hidden">

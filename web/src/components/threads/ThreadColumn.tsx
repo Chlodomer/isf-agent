@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, ChevronsRight, MessageSquare, Plus, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, MessageSquare, Search } from "lucide-react";
 import ConfirmDialog from "../shared/ConfirmDialog";
 
 export interface ThreadSummary {
@@ -17,10 +17,8 @@ interface ThreadColumnProps {
   threads: ThreadSummary[];
   archivedThreads: ThreadSummary[];
   activeThreadId: string | null;
-  collapsed: boolean;
   onSelectThread: (threadId: string) => void;
   onCreateThread: () => void;
-  onToggleCollapsed: () => void;
   onRenameThread: (threadId: string, title: string) => void;
   onDeleteThread: (threadId: string) => void;
   onRestoreThread: (threadId: string) => void;
@@ -44,10 +42,8 @@ export default function ThreadColumn({
   threads,
   archivedThreads,
   activeThreadId,
-  collapsed,
   onSelectThread,
   onCreateThread,
-  onToggleCollapsed,
   onRenameThread,
   onDeleteThread,
   onRestoreThread,
@@ -69,67 +65,8 @@ export default function ThreadColumn({
     });
   }, [query, threads]);
 
-  // Collapsed mini-rail: only reachable from the old standalone page (the
-  // sheet always renders with collapsed=false), kept for that layout.
-  if (collapsed) {
-    return (
-      <aside className="thread-column w-full max-h-[20vh] lg:max-h-none lg:w-[76px] flex-shrink-0 rounded-2xl border border-hairline bg-surface flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between border-b border-hairline px-3 py-3">
-          <span className="ui-label text-muted lg:hidden">Threads</span>
-          <button
-            onClick={onToggleCollapsed}
-            className="inline-flex items-center justify-center rounded-md border border-hairline p-1.5 text-muted transition-colors hover:text-ink"
-            aria-label="Expand threads"
-            title="Expand threads"
-          >
-            <ChevronsRight size={14} />
-          </button>
-        </div>
-
-        <div className="flex-1 space-y-2 overflow-y-auto p-2">
-          <button
-            onClick={onCreateThread}
-            className="w-full inline-flex items-center justify-center rounded-lg border border-hairline p-2 text-muted transition-colors hover:text-ink"
-            aria-label="Create new thread"
-            title="New thread"
-          >
-            <Plus size={16} />
-          </button>
-
-          {threads.slice(0, 8).map((thread) => {
-            const isActive = thread.id === activeThreadId;
-            return (
-              <button
-                key={thread.id}
-                onClick={() => onSelectThread(thread.id)}
-                className={`w-full inline-flex items-center justify-center rounded-lg border p-2 transition-colors ${
-                  isActive ? "border-ink text-ink" : "border-hairline text-muted hover:text-ink"
-                }`}
-                aria-label={thread.title}
-                title={thread.title}
-              >
-                <MessageSquare size={14} />
-              </button>
-            );
-          })}
-        </div>
-      </aside>
-    );
-  }
-
   return (
-    <aside className="thread-column w-full max-h-[42vh] lg:max-h-none lg:w-[280px] flex-shrink-0 rounded-2xl border border-hairline bg-surface flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
-        <span className="ui-label text-muted">Threads</span>
-        <button
-          onClick={onCreateThread}
-          className="inline-flex items-center gap-1 font-sans text-[12px] text-muted transition-colors hover:text-ink"
-        >
-          <Plus size={12} />
-          New
-        </button>
-      </div>
-
+    <div className="flex flex-col gap-2">
       <div className="border-b border-hairline px-3 py-2">
         <label htmlFor="thread-search" className="sr-only">
           Search threads
@@ -296,6 +233,6 @@ export default function ThreadColumn({
         }}
         onCancel={() => setEmptyTrashConfirm(false)}
       />
-    </aside>
+    </div>
   );
 }

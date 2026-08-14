@@ -7,12 +7,14 @@ interface ChatSettingsModalProps {
   consent: boolean | null;
   onUpdateConsent: (consent: boolean) => Promise<boolean>;
   onClose: () => void;
+  onAction?: (action: string) => void;
 }
 
 export default function ChatSettingsModal({
   consent,
   onUpdateConsent,
   onClose,
+  onAction,
 }: ChatSettingsModalProps) {
   const [isPurging, setIsPurging] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
@@ -122,7 +124,17 @@ export default function ChatSettingsModal({
           )}
         </div>
 
-        <div className="border-t border-[#e5ddd0] px-5 py-3 flex justify-end">
+        <div className="border-t border-[#e5ddd0] px-5 py-3 flex items-center justify-between">
+          {onAction ? (
+            <button
+              onClick={() => onAction("load-demo")}
+              className="text-xs font-medium text-[#a99580] transition-colors hover:text-[#6d5841]"
+            >
+              Load demo flow
+            </button>
+          ) : (
+            <span />
+          )}
           <button
             onClick={onClose}
             className="rounded-lg bg-[#312a24] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#241f1b] transition-colors"

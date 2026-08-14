@@ -12,8 +12,6 @@ import ChatPersistenceBanner from "./ChatPersistenceBanner";
 interface MainChatProps {
   onAction: (action: string) => void;
   onAssistantReply?: (userPrompt: string, assistantReply: string) => void;
-  activeThreadTitle?: string;
-  activeThreadRecap?: string | null;
   showPersistenceBanner?: boolean;
   onAcceptPersistence?: () => void;
   onDismissPersistence?: () => void;
@@ -22,17 +20,10 @@ interface MainChatProps {
 export default function MainChat({
   onAction,
   onAssistantReply,
-  activeThreadTitle = "Current thread",
-  activeThreadRecap = null,
   showPersistenceBanner = false,
   onAcceptPersistence,
   onDismissPersistence,
 }: MainChatProps) {
-  // activeThreadTitle/activeThreadRecap are accepted-but-unused this task;
-  // Task 10's page cut-over removes them from the prop surface entirely.
-  void activeThreadTitle;
-  void activeThreadRecap;
-
   const messages = useProposalStore((s) => s.messages);
   const phase = useProposalStore((s) => s.session.currentPhase);
   const researcherInfo = useProposalStore((s) => s.researcherInfo);

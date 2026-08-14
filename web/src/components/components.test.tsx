@@ -15,20 +15,12 @@ import PhaseTransitionCard from "@/components/chat/messages/PhaseTransitionCard"
 import ResumeSessionCard from "@/components/chat/messages/ResumeSessionCard";
 import WelcomeCard from "@/components/chat/messages/WelcomeCard";
 import ComplianceDashboardPanel from "@/components/context-panel/ComplianceDashboardPanel";
-import ContextPanel from "@/components/context-panel/ContextPanel";
 import DraftViewerPanel from "@/components/context-panel/DraftViewerPanel";
 import InterviewTrackerPanel from "@/components/context-panel/InterviewTrackerPanel";
 import LearningsPanel from "@/components/context-panel/LearningsPanel";
 import OperationsDashboardPanel from "@/components/context-panel/OperationsDashboardPanel";
-import PanelTabs from "@/components/context-panel/PanelTabs";
 import SubmissionReadinessPanel from "@/components/context-panel/SubmissionReadinessPanel";
 import VersionHistoryPanel from "@/components/context-panel/VersionHistoryPanel";
-import LeftRail from "@/components/left-rail/LeftRail";
-import PhaseItem from "@/components/left-rail/PhaseItem";
-import PhaseStepper from "@/components/left-rail/PhaseStepper";
-import QuickActions from "@/components/left-rail/QuickActions";
-import SessionMeta from "@/components/left-rail/SessionMeta";
-import SubProgress from "@/components/left-rail/SubProgress";
 import OnboardingExperience from "@/components/onboarding/OnboardingExperience";
 import ThreadColumn from "@/components/threads/ThreadColumn";
 import { useProposalStore } from "@/lib/store";
@@ -236,11 +228,6 @@ describe("component coverage and failure/security behaviors", () => {
     expect(screen.getByText(/compliance check will run/i)).toBeInTheDocument();
   });
 
-  it("ContextPanel renders operations tab by default", () => {
-    render(<ContextPanel onAction={vi.fn()} />);
-    expect(screen.getByText(/operations dashboard/i)).toBeInTheDocument();
-  });
-
   it("DraftViewerPanel shows empty state without drafts", () => {
     render(<DraftViewerPanel />);
     expect(screen.getByText(/your proposal will appear here/i)).toBeInTheDocument();
@@ -262,13 +249,6 @@ describe("component coverage and failure/security behaviors", () => {
     expect(screen.getByText(/ongoing processes/i)).toBeInTheDocument();
   });
 
-  it("PanelTabs switches active tab in store", async () => {
-    const user = userEvent.setup();
-    render(<PanelTabs />);
-    await user.click(screen.getByRole("button", { name: /draft/i }));
-    expect(useProposalStore.getState().ui.activeContextTab).toBe("draft");
-  });
-
   it("SubmissionReadinessPanel renders blockers and actions", () => {
     render(<SubmissionReadinessPanel onAction={vi.fn()} />);
     expect(screen.getByText(/submission readiness/i)).toBeInTheDocument();
@@ -288,42 +268,6 @@ describe("component coverage and failure/security behaviors", () => {
     expect(useProposalStore.getState().session.currentPhase).toBe(3);
 
     confirmSpy.mockRestore();
-  });
-
-  it("LeftRail renders navigation and quick actions", () => {
-    render(<LeftRail onPhaseClick={vi.fn()} onAction={vi.fn()} />);
-    expect(screen.getByText(/isf personal research grant/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /open operations dashboard/i })).toBeInTheDocument();
-  });
-
-  it("PhaseItem renders status-specific state", () => {
-    render(<PhaseItem phase={2} label="ISF Requirements" status="active" onClick={vi.fn()} />);
-    expect(screen.getByText(/isf requirements/i)).toBeInTheDocument();
-  });
-
-  it("PhaseStepper renders all seven phases", () => {
-    render(<PhaseStepper onPhaseClick={vi.fn()} />);
-    expect(screen.getAllByRole("button").length).toBeGreaterThanOrEqual(7);
-  });
-
-  it("QuickActions dispatches selected action", async () => {
-    const user = userEvent.setup();
-    const onAction = vi.fn();
-    render(<QuickActions onAction={onAction} />);
-    await user.click(screen.getByRole("button", { name: /export my data/i }));
-    expect(onAction).toHaveBeenCalledWith("export-data");
-  });
-
-  it("SessionMeta shows not-saved fallback", () => {
-    render(<SessionMeta />);
-    expect(screen.getByText(/not saved yet/i)).toBeInTheDocument();
-  });
-
-  it("SubProgress supports interview and draft branches", () => {
-    const { rerender } = render(<SubProgress phase={4} />);
-    expect(screen.getByText(/eligibility & background/i)).toBeInTheDocument();
-    rerender(<SubProgress phase={5} />);
-    expect(screen.getByText(/abstract/i)).toBeInTheDocument();
   });
 
   it("OnboardingExperience blocks continuation until required fields are set", async () => {
@@ -357,10 +301,8 @@ describe("component coverage and failure/security behaviors", () => {
         ]}
         archivedThreads={[]}
         activeThreadId={null}
-        collapsed={false}
         onSelectThread={onSelectThread}
         onCreateThread={vi.fn()}
-        onToggleCollapsed={vi.fn()}
         onRenameThread={onRenameThread}
         onDeleteThread={onDeleteThread}
         onRestoreThread={vi.fn()}

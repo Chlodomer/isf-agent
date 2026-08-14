@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useProposalStore } from "@/lib/store";
 import { DEMO_MESSAGES } from "@/lib/demo-data";
-import LeftRail from "@/components/left-rail/LeftRail";
 import MainChat from "@/components/chat/MainChat";
-import ContextPanel from "@/components/context-panel/ContextPanel";
-import ThreadColumn, { type ThreadSummary } from "@/components/threads/ThreadColumn";
+import WorkspaceShell from "@/components/shell/WorkspaceShell";
+import JourneySheet from "@/components/shell/JourneySheet";
+import WorkSheets from "@/components/context-panel/WorkSheets";
+import ThreadsSheet from "@/components/threads/ThreadsSheet";
+import type { ThreadSummary } from "@/components/threads/ThreadColumn";
 import OnboardingExperience from "@/components/onboarding/OnboardingExperience";
 import type { OnboardingProfile } from "@/components/onboarding/OnboardingExperience";
 import {
@@ -31,14 +33,12 @@ import {
   phaseToContextTab,
 } from "@/lib/workflow-sync";
 import ChatSettingsModal from "@/components/settings/ChatSettingsModal";
-import { Eye } from "lucide-react";
 import { useParams } from "next/navigation";
 
 const ONBOARDING_STORAGE_KEY = "isf.onboarding.completed";
 const ONBOARDING_PROFILE_KEY = "isf.onboarding.profile";
 const THREADS_STORAGE_KEY = "isf.chat.threads.v1";
 const ACTIVE_THREAD_STORAGE_KEY = "isf.chat.active-thread.v1";
-const THREADS_COLLAPSED_STORAGE_KEY = "isf.chat.threads-collapsed.v1";
 type OnboardingStatus = "checking" | "active" | "done";
 type ThreadTitleOrigin = "auto" | "manual";
 
@@ -212,48 +212,6 @@ function hasSubstantiveThreadHistory(messages: ChatMessage[]): boolean {
   return messages.some((message) => message.type !== "welcome");
 }
 
-function deriveThreadRecap(messages: ChatMessage[]): string | null {
-  if (!hasSubstantiveThreadHistory(messages)) return null;
-
-  const textMessages = messages.filter(
-    (message): message is Extract<ChatMessage, { type: "text" }> => message.type === "text"
-  );
-
-  const userTexts = textMessages
-    .filter((message) => message.role === "user")
-    .map((message) => message.content);
-  const agentTexts = textMessages
-    .filter((message) => message.role === "agent")
-    .map((message) => message.content);
-
-  const normalize = (value: string, maxLength: number) => {
-    const compact = value.trim().replace(/\s+/g, " ");
-    return compact.length > maxLength ? `${compact.slice(0, maxLength - 3)}...` : compact;
-  };
-
-  if (userTexts.length === 0 && agentTexts.length === 0) {
-    const nonTextCount = messages.filter((message) => message.type !== "welcome").length;
-    return `This thread includes ${nonTextCount} workflow updates. Continue from the latest step in the chat.`;
-  }
-
-  const openingUserMessage = userTexts[0];
-  const latestRelevant = agentTexts.at(-1) ?? userTexts.at(-1) ?? null;
-
-  if (!openingUserMessage) {
-    return latestRelevant
-      ? `Latest discussion point: ${normalize(latestRelevant, 220)}`
-      : "Continue from where this thread last paused.";
-  }
-
-  const opening = normalize(openingUserMessage, 150);
-  if (!latestRelevant || latestRelevant === openingUserMessage) {
-    return `Primary topic: ${opening}`;
-  }
-
-  const latest = normalize(latestRelevant, 170);
-  return `Primary topic: ${opening} Latest point: ${latest}`;
-}
-
 function downloadJsonFile(filename: string, payload: unknown) {
   const blob = new Blob([JSON.stringify(payload, null, 2)], {
     type: "application/json",
@@ -303,7 +261,6 @@ export default function ProposalWorkspace() {
   const messages = useProposalStore((s) => s.messages);
   const [threads, setThreads] = useState<PersistedThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
-  const [threadsCollapsed, setThreadsCollapsed] = useState(false);
   const [threadsLoaded, setThreadsLoaded] = useState(false);
   const [demoLoaded, setDemoLoaded] = useState(false);
   const actionStreamRef = useRef("");
@@ -394,12 +351,8 @@ export default function ProposalWorkspace() {
       }
 
       const persistedActive = window.localStorage.getItem(ACTIVE_THREAD_STORAGE_KEY);
-      const persistedCollapsed =
-        window.localStorage.getItem(THREADS_COLLAPSED_STORAGE_KEY) === "true";
       const initialThreadId = routeThreadId || persistedActive || createThreadId();
       const existing = parsedThreads.find((thread) => thread.id === initialThreadId);
-
-      setThreadsCollapsed(persistedCollapsed);
 
       if (existing) {
         resetWorkspaceForNewThread();
@@ -480,14 +433,10 @@ export default function ProposalWorkspace() {
       if (activeThreadId) {
         window.localStorage.setItem(ACTIVE_THREAD_STORAGE_KEY, activeThreadId);
       }
-      window.localStorage.setItem(
-        THREADS_COLLAPSED_STORAGE_KEY,
-        String(threadsCollapsed)
-      );
     } catch {
       // no-op: local persistence is best-effort
     }
-  }, [activeThreadId, threads, threadsCollapsed, threadsLoaded]);
+  }, [activeThreadId, threads, threadsLoaded]);
 
   const activeTitle =
     threads.find((t) => t.id === activeThreadId)?.title ?? "New thread";
@@ -741,10 +690,6 @@ export default function ProposalWorkspace() {
     setThreads((current) => current.filter((thread) => !thread.archivedAt));
   }, []);
 
-  const handleToggleThreadsCollapsed = useCallback(() => {
-    setThreadsCollapsed((current) => !current);
-  }, []);
-
   const completeOnboarding = useCallback(
     (profile: OnboardingProfile) => {
       const cleanedProfile = {
@@ -941,6 +886,9 @@ export default function ProposalWorkspace() {
 
       if (action === "open-settings") {
         setSettingsOpen(true);
+        return;
+      } else if (action === "load-demo") {
+        loadDemo();
         return;
       } else if (action === "clear-conversation") {
         handleClearConversation();
@@ -1230,6 +1178,7 @@ export default function ProposalWorkspace() {
       activeContextTab,
       activeThreadId,
       contextPanelOpen,
+      loadDemo,
       threads,
       validation,
       setRequirementsFetched,
@@ -1270,59 +1219,74 @@ export default function ProposalWorkspace() {
       archivedAt: thread.archivedAt,
     }));
 
-  const activeThreadTitle =
-    threads.find((thread) => thread.id === activeThreadId)?.title ?? "Current thread";
-  const activeThreadRecap = deriveThreadRecap(messages);
+  const answered = deriveInterviewAnsweredCount(interview);
+  const nextApprovable = getNextApprovableSection(proposalSections);
+  const activitySummary =
+    phase === 4
+      ? `${answered} of ${TOTAL_INTERVIEW_QUESTIONS} questions`
+      : phase >= 5 && nextApprovable
+        ? SECTION_LABELS[nextApprovable]
+        : null;
+
+  const closeSheet = () => {
+    if (contextPanelOpen) toggleContextPanel();
+  };
 
   return (
-    <div className="relative flex h-screen flex-col gap-3 bg-transparent p-2 lg:flex-row lg:p-3">
-      <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_20%_20%,rgba(186,136,86,0.13),transparent_45%),radial-gradient(circle_at_78%_18%,rgba(120,110,96,0.11),transparent_42%),radial-gradient(circle_at_30%_84%,rgba(92,102,114,0.10),transparent_44%)]" />
-      <div className="relative z-10 contents">
-        <LeftRail onPhaseClick={handlePhaseClick} onAction={handleAction} />
-        <ThreadColumn
-          threads={activeThreadSummaries}
-          archivedThreads={archivedThreadSummaries}
-          activeThreadId={activeThreadId}
-          collapsed={threadsCollapsed}
-          onSelectThread={handleSelectThread}
-          onCreateThread={handleCreateThread}
-          onToggleCollapsed={handleToggleThreadsCollapsed}
-          onRenameThread={handleRenameThread}
-          onDeleteThread={handleDeleteThread}
-          onRestoreThread={handleRestoreThread}
-          onPermanentDelete={handlePermanentDeleteThread}
-          onEmptyTrash={handleEmptyTrash}
-        />
+    <>
+      <WorkspaceShell
+        onOpenSheet={(tab) => openContextPanel(tab)}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onUpload={() => handleAction("upload-first")}
+        activitySummary={activitySummary}
+      >
         <MainChat
           onAction={handleAction}
           onAssistantReply={syncAssistantReplyToWorkspace}
-          activeThreadTitle={activeThreadTitle}
-          activeThreadRecap={activeThreadRecap}
           showPersistenceBanner={showBanner}
           onAcceptPersistence={handleAcceptPersistence}
           onDismissPersistence={handleDismissBanner}
         />
-        {contextPanelOpen && <ContextPanel onAction={handleAction} />}
-      </div>
+
+        {contextPanelOpen && (activeContextTab === "journey" || activeContextTab === "operations") && (
+          <JourneySheet onClose={closeSheet} onAction={handleAction} />
+        )}
+        {contextPanelOpen && activeContextTab === "threads" && (
+          <ThreadsSheet
+            threads={activeThreadSummaries}
+            archivedThreads={archivedThreadSummaries}
+            activeThreadId={activeThreadId}
+            onSelectThread={(id) => {
+              handleSelectThread(id);
+              closeSheet();
+            }}
+            onCreateThread={() => {
+              handleCreateThread();
+              closeSheet();
+            }}
+            onRenameThread={handleRenameThread}
+            onDeleteThread={handleDeleteThread}
+            onRestoreThread={handleRestoreThread}
+            onPermanentDelete={handlePermanentDeleteThread}
+            onEmptyTrash={handleEmptyTrash}
+            onClearConversation={() => {
+              handleClearConversation();
+              closeSheet();
+            }}
+            onClose={closeSheet}
+          />
+        )}
+        <WorkSheets onAction={handleAction} onClose={closeSheet} />
+      </WorkspaceShell>
 
       {settingsOpen && (
         <ChatSettingsModal
           consent={persistenceConsent}
           onUpdateConsent={updateConsent}
           onClose={() => setSettingsOpen(false)}
+          onAction={handleAction}
         />
       )}
-
-      {/* Demo mode toggle */}
-      {!demoLoaded && (
-        <button
-          onClick={loadDemo}
-          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-[#312a24] px-4 py-2 text-sm text-white shadow-lg transition-colors hover:bg-[#241f1b]"
-        >
-          <Eye size={16} />
-          Load Demo Flow
-        </button>
-      )}
-    </div>
+    </>
   );
 }

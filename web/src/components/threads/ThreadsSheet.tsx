@@ -45,21 +45,7 @@ export default function ThreadsSheet({
         </>
       }
     >
-      {/*
-        ThreadColumn keeps its own fixed-column chrome (width, border,
-        background, max-height) for the old standalone page, which renders
-        it as a flex sibling and still depends on those classes for layout.
-        Inside the sheet we neutralize that chrome via the `.thread-column`
-        marker class so it reads as a plain, full-width list here instead of
-        a pinned 280px column with dead space beside it.
-      */}
-      <div
-        className="[&_.thread-column]:w-full [&_.thread-column]:max-h-none
-          [&_.thread-column]:rounded-none [&_.thread-column]:border-0
-          [&_.thread-column]:bg-transparent [&_.thread-column]:overflow-visible"
-      >
-        <ThreadColumn {...columnProps} collapsed={false} onToggleCollapsed={() => {}} />
-      </div>
+      <ThreadColumn {...columnProps} />
     </Sheet>
   );
 }
