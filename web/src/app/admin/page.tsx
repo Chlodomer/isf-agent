@@ -653,7 +653,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-hairline text-sm">
-              <thead className="bg-canvas text-left ui-label text-muted">
+              <thead className="bg-canvas text-start ui-label text-muted">
                 <tr>
                   <th className="px-4 py-2.5">Name</th>
                   <th className="px-4 py-2.5">Email</th>
@@ -774,7 +774,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-hairline text-sm">
-              <thead className="bg-canvas text-left ui-label text-muted">
+              <thead className="bg-canvas text-start ui-label text-muted">
                 <tr>
                   <th className="px-4 py-2.5">When</th>
                   <th className="px-4 py-2.5">Action</th>

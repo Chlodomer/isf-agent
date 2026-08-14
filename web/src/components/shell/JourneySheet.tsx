@@ -67,22 +67,12 @@ export default function JourneySheet({ onClose, onAction }: JourneySheetProps) {
       title={PHASE_LABELS[phase]}
       onClose={onClose}
       footer={
-        <>
-          <button
-            onClick={onClose}
-            className="border-b border-ink text-ink"
-          >
-            Continue where I was
-          </button>
-          <button
-            onClick={() => {
-              onAction("view-summary");
-            }}
-            className="text-muted transition-colors hover:text-ink"
-          >
-            View full progress
-          </button>
-        </>
+        <button
+          onClick={onClose}
+          className="border-b border-ink text-ink"
+        >
+          Continue where I was
+        </button>
       }
     >
       <div className="flex items-start">

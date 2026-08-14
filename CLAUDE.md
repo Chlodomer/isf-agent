@@ -18,10 +18,12 @@ AI-powered assistant for writing Israel Science Foundation (ISF) New Principal I
 ## Frontend Component Organization
 
 Components live in `web/src/components/` organized by UI area:
-- `left-rail/` — navigation and phase stepper
+- `shell/` — WorkspaceShell, Sheet, PhaseDots, WhisperLine, JourneySheet
 - `chat/` — main conversation area
 - `chat/messages/` — 9 structured message card types with color-coded borders (Challenge, Interview Question, Draft Review, Compliance Report, etc.)
-- `context-panel/` — draft viewer, learnings, compliance, interview tracker
+- `context-panel/` — draft viewer, learnings, compliance, interview tracker; these render inside sheets via `context-panel/WorkSheets`, not as standalone panels
+
+The Paper & Ink design token system (colors, type, spacing) lives in `web/src/app/globals.css`.
 
 ## Key Directories
 

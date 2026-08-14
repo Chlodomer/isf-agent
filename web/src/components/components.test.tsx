@@ -18,10 +18,8 @@ import ComplianceDashboardPanel from "@/components/context-panel/ComplianceDashb
 import DraftViewerPanel from "@/components/context-panel/DraftViewerPanel";
 import InterviewTrackerPanel from "@/components/context-panel/InterviewTrackerPanel";
 import LearningsPanel from "@/components/context-panel/LearningsPanel";
-import OperationsDashboardPanel from "@/components/context-panel/OperationsDashboardPanel";
 import SubmissionReadinessPanel from "@/components/context-panel/SubmissionReadinessPanel";
 import VersionHistoryPanel from "@/components/context-panel/VersionHistoryPanel";
-import OnboardingExperience from "@/components/onboarding/OnboardingExperience";
 import ThreadColumn from "@/components/threads/ThreadColumn";
 import { useProposalStore } from "@/lib/store";
 import { resetProposalStore } from "@/test/store-fixture";
@@ -241,12 +239,6 @@ describe("component coverage and failure/security behaviors", () => {
   it("LearningsPanel handles empty learnings set", () => {
     render(<LearningsPanel />);
     expect(screen.getByText(/no past proposals analyzed yet/i)).toBeInTheDocument();
-  });
-
-  it("OperationsDashboardPanel renders process overview", () => {
-    render(<OperationsDashboardPanel />);
-    expect(screen.getByText(/operations dashboard/i)).toBeInTheDocument();
-    expect(screen.getByText(/ongoing processes/i)).toBeInTheDocument();
   });
 
   it("SubmissionReadinessPanel renders blockers and actions", () => {
