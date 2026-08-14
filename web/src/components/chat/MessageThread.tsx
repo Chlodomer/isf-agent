@@ -1,7 +1,7 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import type { ChatMessage } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
 import ChallengeCard from "./messages/ChallengeCard";
@@ -34,28 +34,37 @@ function TypingIndicator() {
 
 function TextMessage({ message }: { message: Extract<ChatMessage, { type: "text" }> }) {
   const isUser = message.role === "user";
-  return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"} my-3`}>
-      <div
-        className={`max-w-[88%] rounded-2xl px-4 py-3 text-base leading-relaxed ${
-          isUser
-            ? "rounded-br-md bg-[#8f6440] text-white"
-            : "rounded-bl-md bg-[#f1e8db] text-[#3f342b]"
-        }`}
-      >
-        <ReactMarkdown
-          components={{
-            p: ({ children }) => <p className="whitespace-pre-wrap">{children}</p>,
-            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-            em: ({ children }) => <em className="italic">{children}</em>,
-            ul: ({ children }) => <ul className="list-disc pl-5 space-y-1">{children}</ul>,
-            ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1">{children}</ol>,
-            li: ({ children }) => <li>{children}</li>,
-          }}
-        >
-          {message.content}
-        </ReactMarkdown>
+
+  const markdownComponents = {
+    p: ({ children }: { children?: ReactNode }) => (
+      <p className="whitespace-pre-wrap">{children}</p>
+    ),
+    strong: ({ children }: { children?: ReactNode }) => (
+      <strong className="font-semibold">{children}</strong>
+    ),
+    em: ({ children }: { children?: ReactNode }) => <em className="italic">{children}</em>,
+    ul: ({ children }: { children?: ReactNode }) => (
+      <ul className="list-disc ps-5 space-y-1">{children}</ul>
+    ),
+    ol: ({ children }: { children?: ReactNode }) => (
+      <ol className="list-decimal ps-5 space-y-1">{children}</ol>
+    ),
+    li: ({ children }: { children?: ReactNode }) => <li>{children}</li>,
+  };
+
+  if (isUser) {
+    return (
+      <div className="flex justify-end my-3">
+        <div className="max-w-[70%] self-end rounded-[16px] rounded-ee-[4px] bg-bubble px-4 py-2.5 font-sans text-[13.5px] text-body">
+          <ReactMarkdown components={markdownComponents}>{message.content}</ReactMarkdown>
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="my-3 font-serif text-[15px] leading-relaxed text-ink">
+      <ReactMarkdown components={markdownComponents}>{message.content}</ReactMarkdown>
     </div>
   );
 }

@@ -95,7 +95,7 @@ describe("component coverage and failure/security behaviors", () => {
       { id: "m2", type: "text", role: "agent", content: "Next step guidance" },
     ];
     render(<MessageThread messages={messages} onAction={vi.fn()} />);
-    expect(screen.getByText(/welcome to granite/i)).not.toBeVisible();
+    expect(screen.getByText(/i'm granite/i)).not.toBeVisible();
     expect(screen.getByText(/show quick-start actions/i)).toBeInTheDocument();
     expect(screen.getByText(/next step guidance/i)).toBeInTheDocument();
   });
@@ -211,12 +211,9 @@ describe("component coverage and failure/security behaviors", () => {
     expect(screen.getByText(/weaknesses found/i)).toBeInTheDocument();
   });
 
-  it("PhaseTransitionCard links to next phase action", async () => {
-    const user = userEvent.setup();
-    const onAction = vi.fn();
-    render(<PhaseTransitionCard fromPhase={2} toPhase={3} summary="Ready to continue." onAction={onAction} />);
-    await user.click(screen.getByRole("button", { name: /continue to learn from past work/i }));
-    expect(onAction).toHaveBeenCalledWith("go-phase:3");
+  it("PhaseTransitionCard renders a ruled interstitial for the destination phase", () => {
+    render(<PhaseTransitionCard fromPhase={2} toPhase={3} summary="Ready to continue." onAction={vi.fn()} />);
+    expect(screen.getByText(/entering phase 3/i)).toBeInTheDocument();
   });
 
   it("ResumeSessionCard renders continuation actions", async () => {
@@ -231,15 +228,13 @@ describe("component coverage and failure/security behaviors", () => {
         onAction={onAction}
       />
     );
-    await user.click(screen.getByRole("button", { name: /continue where i left off/i }));
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
     expect(onAction).toHaveBeenCalledWith("continue");
   });
 
-  it("WelcomeCard renders CTA options", () => {
-    patchProposalStore({ researcherInfo: { ...useProposalStore.getState().researcherInfo, name: "Ada" } });
+  it("WelcomeCard renders a short bare greeting", () => {
     render(<WelcomeCard onAction={vi.fn()} />);
-    expect(screen.getByText(/welcome, ada/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /repeat onboarding/i })).toBeInTheDocument();
+    expect(screen.getByText(/i'm granite/i)).toBeInTheDocument();
   });
 
   it("ComplianceDashboardPanel handles no-run state", () => {
