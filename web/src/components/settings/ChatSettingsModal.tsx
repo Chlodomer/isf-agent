@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Database, Trash2, X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 
 interface ChatSettingsModalProps {
   consent: boolean | null;
@@ -20,12 +20,14 @@ export default function ChatSettingsModal({
   const [isToggling, setIsToggling] = useState(false);
   const [purgeResult, setPurgeResult] = useState<string | null>(null);
 
-  const handleToggle = useCallback(async () => {
+  const stealthMode = consent === false;
+
+  const handleToggleStealth = useCallback(async () => {
     setIsToggling(true);
-    const newValue = !consent;
-    await onUpdateConsent(newValue);
+    // Toggling flips stealth mode; consent is the inverse of stealth.
+    await onUpdateConsent(stealthMode);
     setIsToggling(false);
-  }, [consent, onUpdateConsent]);
+  }, [onUpdateConsent, stealthMode]);
 
   const handlePurge = useCallback(async () => {
     if (!confirm("Delete all server-side chat history? Your local data will remain.")) {
@@ -64,36 +66,39 @@ export default function ChatSettingsModal({
         </div>
 
         <div className="px-7 py-5 space-y-4 font-sans text-[13px] text-body">
-          {/* Persistence toggle */}
-          <div className="flex items-start gap-3">
-            <Database size={18} className="text-muted mt-0.5" />
+          {/* Chat history */}
+          <div>
+            <p className="ui-label text-muted">Chat history</p>
+            <p className="mt-1.5 leading-relaxed">
+              Conversations are saved automatically so you can pick up where
+              you left off.
+            </p>
+          </div>
+
+          <div className="flex items-start justify-between gap-3 pt-3 border-t border-hairline">
             <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-ink">
-                  Save chat history
-                </p>
-                <button
-                  onClick={handleToggle}
-                  disabled={isToggling || consent === null}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    consent
-                      ? "bg-ink"
-                      : "bg-faint"
-                  } ${isToggling ? "opacity-50" : ""}`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 rounded-full bg-surface transition-transform ${
-                      consent ? "translate-x-6" : "translate-x-1"
-                    }`}
-                  />
-                </button>
-              </div>
+              <p className="text-sm font-semibold text-ink">Stealth mode</p>
               <p className="text-[13px] text-muted mt-1 leading-relaxed">
-                {consent
-                  ? "Conversations are saved to your account. Disable to stop saving (existing data remains until purged)."
-                  : "Conversations are only stored in this browser. Enable to save them to your account."}
+                Nothing you write is saved — this conversation disappears when
+                you close the tab.
               </p>
             </div>
+            <button
+              onClick={handleToggleStealth}
+              disabled={isToggling || consent === null}
+              aria-label="Stealth mode"
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                stealthMode
+                  ? "bg-ink"
+                  : "bg-faint"
+              } ${isToggling ? "opacity-50" : ""}`}
+            >
+              <span
+                className={`inline-block h-4 w-4 rounded-full bg-surface transition-transform ${
+                  stealthMode ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
           </div>
 
           {/* Purge section */}

@@ -270,6 +270,11 @@ export default function ProposalWorkspace() {
   const [tourOpen, setTourOpen] = useState(false);
   const [streamFailure, setStreamFailure] = useState<StreamFailure | null>(null);
 
+  const activeTitle =
+    threads.find((t) => t.id === activeThreadId)?.title ?? "New thread";
+  const { consent: persistenceConsent, updateConsent: updateConsentBase } =
+    useChatPersistence(activeThreadId, activeTitle);
+
   useEffect(() => {
     processedWorkflowMessageIdsRef.current.clear();
   }, [activeThreadId]);
@@ -391,6 +396,7 @@ export default function ProposalWorkspace() {
 
   useEffect(() => {
     if (!threadsLoaded || !activeThreadId) return;
+    if (persistenceConsent === false) return; // stealth mode: don't fold updates into thread state
     const timer = window.setTimeout(() => {
       setThreads((current) => {
         const existing = current.find((thread) => thread.id === activeThreadId);
@@ -431,6 +437,7 @@ export default function ProposalWorkspace() {
 
   useEffect(() => {
     if (!threadsLoaded) return;
+    if (persistenceConsent === false) return; // stealth mode: nothing is written
 
     try {
       window.localStorage.setItem(THREADS_STORAGE_KEY, JSON.stringify(threads));
@@ -440,49 +447,46 @@ export default function ProposalWorkspace() {
     } catch {
       // no-op: local persistence is best-effort
     }
-  }, [activeThreadId, threads, threadsLoaded]);
+  }, [activeThreadId, persistenceConsent, threads, threadsLoaded]);
 
-  const activeTitle =
-    threads.find((t) => t.id === activeThreadId)?.title ?? "New thread";
-  const { consent: persistenceConsent, updateConsent, showBanner, dismissBanner } =
-    useChatPersistence(activeThreadId, activeTitle);
-
-  const handleAcceptPersistence = useCallback(async () => {
-    const success = await updateConsent(true);
-    if (success && threads.length > 0) {
-      // Bulk-sync existing localStorage threads to DB
-      void fetch("/api/threads/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          threads: threads.map((t) => ({
-            clientThreadId: t.id,
-            title: t.title,
-            titleOrigin: t.titleOrigin ?? "auto",
-            messages: t.messages
-              .filter((m): m is Extract<ChatMessage, { type: "text" }> => m.type === "text")
-              .map((m) => ({
-                role: m.role === "agent" ? "assistant" : "user",
-                type: m.type,
-                content: m.content,
-              })),
-          })),
-        }),
-      });
-      addMessage({
-        id: `persistence-${Date.now()}`,
-        type: "text",
-        role: "agent",
-        content:
-          "Chat history saving is now enabled. Your existing conversations have been saved to your account.",
-      });
-    }
-    dismissBanner();
-  }, [addMessage, dismissBanner, threads, updateConsent]);
-
-  const handleDismissBanner = useCallback(() => {
-    dismissBanner();
-  }, [dismissBanner]);
+  // Wraps updateConsent so that whenever consent flips to true (stealth mode
+  // turned off), existing localStorage threads are bulk-synced to the server.
+  // Degrades gracefully: if /api/threads/sync is unavailable (no DB), the
+  // fire-and-forget fetch simply fails silently and local state is unaffected.
+  const handleUpdateConsent = useCallback(
+    async (newConsent: boolean) => {
+      const success = await updateConsentBase(newConsent);
+      if (newConsent && threads.length > 0) {
+        void fetch("/api/threads/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            threads: threads.map((t) => ({
+              clientThreadId: t.id,
+              title: t.title,
+              titleOrigin: t.titleOrigin ?? "auto",
+              messages: t.messages
+                .filter((m): m is Extract<ChatMessage, { type: "text" }> => m.type === "text")
+                .map((m) => ({
+                  role: m.role === "agent" ? "assistant" : "user",
+                  type: m.type,
+                  content: m.content,
+                })),
+            })),
+          }),
+        });
+        addMessage({
+          id: `persistence-${Date.now()}`,
+          type: "text",
+          role: "agent",
+          content:
+            "Chat history saving is now enabled. Your existing conversations have been saved to your account.",
+        });
+      }
+      return success;
+    },
+    [addMessage, threads, updateConsentBase]
+  );
 
   const loadDemo = useCallback(() => {
     if (demoLoaded) return;
@@ -1267,9 +1271,7 @@ export default function ProposalWorkspace() {
         <MainChat
           onAction={handleAction}
           onAssistantReply={syncAssistantReplyToWorkspace}
-          showPersistenceBanner={showBanner}
-          onAcceptPersistence={handleAcceptPersistence}
-          onDismissPersistence={handleDismissBanner}
+          stealthMode={persistenceConsent === false}
           streamFailure={streamFailure}
           onStreamFailure={handleStreamFailureFromChat}
           onRetryFailure={handleRetryActionFailure}
@@ -1311,7 +1313,7 @@ export default function ProposalWorkspace() {
       {settingsOpen && (
         <ChatSettingsModal
           consent={persistenceConsent}
-          onUpdateConsent={updateConsent}
+          onUpdateConsent={handleUpdateConsent}
           onClose={() => setSettingsOpen(false)}
           onAction={handleAction}
         />

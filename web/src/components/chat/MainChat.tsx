@@ -8,7 +8,6 @@ import { historyBeforePrompt } from "@/lib/thread-hygiene";
 import type { ChatMessage, ReferenceSource } from "@/lib/types";
 import MessageThread from "./MessageThread";
 import ChatInput from "./ChatInput";
-import ChatPersistenceBanner from "./ChatPersistenceBanner";
 import StreamFailureNotice from "./StreamFailureNotice";
 
 export interface StreamFailure {
@@ -20,9 +19,7 @@ export interface StreamFailure {
 interface MainChatProps {
   onAction: (action: string) => void;
   onAssistantReply?: (userPrompt: string, assistantReply: string) => void;
-  showPersistenceBanner?: boolean;
-  onAcceptPersistence?: () => void;
-  onDismissPersistence?: () => void;
+  stealthMode?: boolean;
   streamFailure?: StreamFailure | null;
   onStreamFailure?: (prompt: string, message: string) => void;
   onRetryFailure?: () => void;
@@ -32,9 +29,7 @@ interface MainChatProps {
 export default function MainChat({
   onAction,
   onAssistantReply,
-  showPersistenceBanner = false,
-  onAcceptPersistence,
-  onDismissPersistence,
+  stealthMode = false,
   streamFailure = null,
   onStreamFailure,
   onRetryFailure,
@@ -215,20 +210,17 @@ export default function MainChat({
         isLoading={isSending}
         phase={phase}
       />
-      {showPersistenceBanner && onAcceptPersistence && onDismissPersistence && (
-        <div className="mx-auto w-full max-w-[840px] px-4">
-          <ChatPersistenceBanner
-            onAccept={onAcceptPersistence}
-            onDismiss={onDismissPersistence}
-          />
-        </div>
-      )}
       {streamFailure && (
         <StreamFailureNotice
           message={streamFailure.message}
           onRetry={handleRetryFailure}
           onDismiss={() => onDismissFailure?.()}
         />
+      )}
+      {stealthMode && (
+        <p className="ui-label text-muted text-center pb-2">
+          Stealth — this conversation is not being saved
+        </p>
       )}
       <ChatInput
         onSend={handleSend}

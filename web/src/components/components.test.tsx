@@ -2,7 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import ChatInput from "@/components/chat/ChatInput";
-import ChatPersistenceBanner from "@/components/chat/ChatPersistenceBanner";
 import MainChat from "@/components/chat/MainChat";
 import MessageThread from "@/components/chat/MessageThread";
 import ChallengeCard from "@/components/chat/messages/ChallengeCard";
@@ -14,6 +13,7 @@ import LearningSummaryCard from "@/components/chat/messages/LearningSummaryCard"
 import PhaseTransitionCard from "@/components/chat/messages/PhaseTransitionCard";
 import ResumeSessionCard from "@/components/chat/messages/ResumeSessionCard";
 import WelcomeCard from "@/components/chat/messages/WelcomeCard";
+import ChatSettingsModal from "@/components/settings/ChatSettingsModal";
 import BrandHero from "@/components/shared/BrandHero";
 import ComplianceDashboardPanel from "@/components/context-panel/ComplianceDashboardPanel";
 import DraftViewerPanel from "@/components/context-panel/DraftViewerPanel";
@@ -49,19 +49,6 @@ describe("component coverage and failure/security behaviors", () => {
     expect(onSend).toHaveBeenCalledWith("hello team");
   });
 
-  it("ChatPersistenceBanner offers accept/dismiss actions", async () => {
-    const user = userEvent.setup();
-    const onAccept = vi.fn();
-    const onDismiss = vi.fn();
-    render(<ChatPersistenceBanner onAccept={onAccept} onDismiss={onDismiss} />);
-
-    expect(screen.getByText(/save chat history to your account/i)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /enable saving/i }));
-    expect(onAccept).toHaveBeenCalledTimes(1);
-    await user.click(screen.getByRole("button", { name: /not now/i }));
-    expect(onDismiss).toHaveBeenCalledTimes(1);
-  });
-
   it("MainChat renders without the deleted banner stack or clear-conversation control", () => {
     render(<MainChat onAction={vi.fn()} />);
     expect(screen.queryByText(/granite workspace/i)).not.toBeInTheDocument();
@@ -70,18 +57,33 @@ describe("component coverage and failure/security behaviors", () => {
     expect(screen.getByPlaceholderText(/reply to granite/i)).toBeInTheDocument();
   });
 
-  it("MainChat renders the inline persistence card inline when requested", () => {
-    const onAccept = vi.fn();
-    const onDismiss = vi.fn();
-    render(
-      <MainChat
-        onAction={vi.fn()}
-        showPersistenceBanner
-        onAcceptPersistence={onAccept}
-        onDismissPersistence={onDismiss}
-      />
+  it("MainChat shows the stealth indicator when stealthMode is on, hides it otherwise", () => {
+    const { rerender } = render(<MainChat onAction={vi.fn()} stealthMode />);
+    expect(screen.getByText(/stealth.*not being saved/i)).toBeInTheDocument();
+
+    rerender(<MainChat onAction={vi.fn()} stealthMode={false} />);
+    expect(screen.queryByText(/stealth.*not being saved/i)).not.toBeInTheDocument();
+  });
+
+  it("ChatSettingsModal renders the Stealth mode toggle and flips consent via onUpdateConsent", async () => {
+    const user = userEvent.setup();
+    const onUpdateConsent = vi.fn().mockResolvedValue(true);
+
+    // consent=true (default, saving on) -> stealth toggle is off; clicking enables stealth (consent -> false)
+    const { rerender } = render(
+      <ChatSettingsModal consent={true} onUpdateConsent={onUpdateConsent} onClose={vi.fn()} />
     );
-    expect(screen.getByText(/save chat history to your account/i)).toBeInTheDocument();
+    expect(screen.getByText(/stealth mode/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /stealth mode/i }));
+    expect(onUpdateConsent).toHaveBeenCalledWith(false);
+
+    // consent=false (stealth on) -> clicking disables stealth (consent -> true)
+    onUpdateConsent.mockClear();
+    rerender(
+      <ChatSettingsModal consent={false} onUpdateConsent={onUpdateConsent} onClose={vi.fn()} />
+    );
+    await user.click(screen.getByRole("button", { name: /stealth mode/i }));
+    expect(onUpdateConsent).toHaveBeenCalledWith(true);
   });
 
   it("MessageThread renders text and escapes script tags", () => {
