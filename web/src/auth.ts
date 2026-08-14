@@ -27,6 +27,10 @@ if (normalizedAuthUrl) {
 }
 
 const hasDatabaseConfig = Boolean(process.env.DATABASE_URL && process.env.DIRECT_URL);
+const demoFallbackEnabled =
+  !hasDatabaseConfig &&
+  (process.env.NODE_ENV === "development" ||
+    process.env.ENABLE_LOCAL_ADMIN_SHORTCUT === "true");
 const devFallbackEmail = process.env.ADMIN_SEED_EMAIL?.trim().toLowerCase() ?? "admin@example.com";
 const devFallbackPassword = process.env.ADMIN_SEED_PASSWORD ?? "dev-password-1234";
 
@@ -50,7 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const parsed = credentialsSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
-        if (!hasDatabaseConfig && process.env.NODE_ENV === "development") {
+        if (demoFallbackEnabled) {
           const matchesEmail = parsed.data.email.toLowerCase().trim() === devFallbackEmail;
           const matchesPassword = parsed.data.password === devFallbackPassword;
           if (!matchesEmail || !matchesPassword) return null;

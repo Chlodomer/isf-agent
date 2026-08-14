@@ -18,8 +18,10 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   const signUpUrl = `/sign-up?${new URLSearchParams({ callbackUrl }).toString()}`;
   const missingDatabaseConfig = !process.env.DATABASE_URL || !process.env.DIRECT_URL;
   const showLocalAdminShortcut =
-    process.env.NODE_ENV === "development" &&
-    (process.env.ENABLE_LOCAL_ADMIN_SHORTCUT === "true" || missingDatabaseConfig);
+    missingDatabaseConfig &&
+    (process.env.NODE_ENV === "development" ||
+      process.env.ENABLE_LOCAL_ADMIN_SHORTCUT === "true");
+  const isDev = process.env.NODE_ENV === "development";
 
   return (
     <main className="min-h-screen bg-canvas flex items-center justify-center px-4 py-10">
@@ -76,9 +78,9 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
               type="submit"
               className="w-full rounded-[8px] border border-hairline-strong py-3.5 font-sans text-[15px] text-body"
             >
-              Continue as local admin
+              {isDev ? "Continue as local admin" : "Enter demo workspace"}
             </button>
-            {missingDatabaseConfig && (
+            {missingDatabaseConfig && isDev && (
               <p className="mt-2 font-sans text-[12px] text-muted">
                 Local fallback auth is active (no database config found).
               </p>
