@@ -19,7 +19,7 @@ interface ChatRequestBody {
   };
 }
 
-interface AnthropicErrorResponse {
+interface UpstreamErrorResponse {
   error?: {
     message?: string;
   };
@@ -30,6 +30,16 @@ interface AnthropicStreamEvent {
   delta?: { type?: string; text?: string };
   error?: { message?: string };
 }
+
+interface OpenAIStreamEvent {
+  type: string;
+  delta?: string;
+  message?: string;
+  error?: { message?: string };
+  response?: { error?: { message?: string } };
+}
+
+type AiProvider = "anthropic" | "openai";
 
 const RETRYABLE_UPSTREAM_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504, 529]);
 const OVERLOAD_ERROR_PATTERN = /\b(overloaded|rate limit|too many requests|temporar(?:ily)? unavailable|capacity)\b/i;
@@ -80,18 +90,48 @@ function normalizeUpstreamErrorMessage(status: number, message: string): string 
   if (isOverloadError(status, trimmed)) {
     return "Model is temporarily overloaded. Please retry in 30-60 seconds.";
   }
-  return trimmed || `Anthropic request failed with status ${status}.`;
+  return trimmed || `AI provider request failed with status ${status}.`;
 }
 
-async function readAnthropicError(response: Response): Promise<string> {
-  const fallback = `Anthropic request failed with status ${response.status}.`;
+function readAiProvider(): AiProvider | null {
+  const configured = process.env.AI_PROVIDER?.trim().toLowerCase();
+  if (configured === "anthropic" || configured === "openai") {
+    return configured;
+  }
+  if (configured) return null;
+  return "openai";
+}
+
+function readOpenAiReasoningEffort():
+  | "none"
+  | "low"
+  | "medium"
+  | "high"
+  | "xhigh"
+  | "max" {
+  const configured = process.env.OPENAI_REASONING_EFFORT?.trim().toLowerCase();
+  if (
+    configured === "none" ||
+    configured === "low" ||
+    configured === "medium" ||
+    configured === "high" ||
+    configured === "xhigh" ||
+    configured === "max"
+  ) {
+    return configured;
+  }
+  return "medium";
+}
+
+async function readUpstreamError(response: Response, providerName: string): Promise<string> {
+  const fallback = `${providerName} request failed with status ${response.status}.`;
 
   try {
     const raw = await response.text();
     if (!raw) return fallback;
 
     try {
-      const parsed = JSON.parse(raw) as AnthropicErrorResponse;
+      const parsed = JSON.parse(raw) as UpstreamErrorResponse;
       if (parsed.error?.message?.trim()) {
         return parsed.error.message.trim();
       }
@@ -140,7 +180,77 @@ async function requestAnthropicMessages(params: {
       }
 
       lastStatus = upstream.status || 502;
-      lastMessage = await readAnthropicError(upstream);
+      lastMessage = await readUpstreamError(upstream, "Anthropic");
+
+      if (
+        attempt < params.maxAttempts &&
+        isRetryableUpstreamError(lastStatus, lastMessage)
+      ) {
+        const backoffMs = params.baseDelayMs * 2 ** (attempt - 1);
+        await sleep(backoffMs);
+        continue;
+      }
+
+      return {
+        error: normalizeUpstreamErrorMessage(lastStatus, lastMessage),
+        status: isOverloadError(lastStatus, lastMessage) ? 503 : lastStatus,
+      };
+    } catch (error) {
+      lastStatus = 503;
+      lastMessage = error instanceof Error ? error.message : "Network error";
+
+      if (attempt < params.maxAttempts) {
+        const backoffMs = params.baseDelayMs * 2 ** (attempt - 1);
+        await sleep(backoffMs);
+        continue;
+      }
+    }
+  }
+
+  return {
+    error: normalizeUpstreamErrorMessage(lastStatus, lastMessage),
+    status: isOverloadError(lastStatus, lastMessage) ? 503 : lastStatus,
+  };
+}
+
+async function requestOpenAIResponses(params: {
+  apiKey: string;
+  model: string;
+  systemPrompt: string;
+  messages: Array<{ role: "user" | "assistant"; content: string }>;
+  reasoningEffort: "none" | "low" | "medium" | "high" | "xhigh" | "max";
+  maxAttempts: number;
+  baseDelayMs: number;
+}): Promise<{ upstream: Response } | { error: string; status: number }> {
+  let lastStatus = 503;
+  let lastMessage = "Upstream request failed.";
+
+  for (let attempt = 1; attempt <= params.maxAttempts; attempt += 1) {
+    try {
+      const upstream = await fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${params.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: params.model,
+          instructions: params.systemPrompt,
+          input: params.messages,
+          stream: true,
+          store: false,
+          max_output_tokens: 4096,
+          reasoning: { effort: params.reasoningEffort },
+          text: { verbosity: "low" },
+        }),
+      });
+
+      if (upstream.ok) {
+        return { upstream };
+      }
+
+      lastStatus = upstream.status || 502;
+      lastMessage = await readUpstreamError(upstream, "OpenAI");
 
       if (
         attempt < params.maxAttempts &&
@@ -235,12 +345,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+  const provider = readAiProvider();
+  if (!provider) {
+    return NextResponse.json(
+      { error: "AI_PROVIDER must be either openai or anthropic." },
+      { status: 500 }
+    );
+  }
+
+  const apiKey =
+    provider === "openai"
+      ? process.env.OPENAI_API_KEY?.trim()
+      : process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) {
+    const keyName = provider === "openai" ? "OPENAI_API_KEY" : "ANTHROPIC_API_KEY";
     return NextResponse.json(
       {
-        error:
-          "ANTHROPIC_API_KEY is not configured on the server. Add it to your environment variables.",
+        error: `${keyName} is not configured on the server. Add it to your environment variables.`,
       },
       { status: 500 }
     );
@@ -266,23 +387,38 @@ export async function POST(request: Request) {
     );
   }
 
-  const configuredModel = process.env.ANTHROPIC_MODEL
-    ?.trim()
-    .replace(/^['"]|['"]$/g, "");
-  const model = configuredModel || "claude-sonnet-4-20250514";
-  const maxAttempts = readIntEnv("ANTHROPIC_RETRY_ATTEMPTS", 3, 1, 5);
-  const retryDelayMs = readIntEnv("ANTHROPIC_RETRY_DELAY_MS", 350, 0, 5000);
+  const configuredModel =
+    provider === "openai"
+      ? process.env.OPENAI_MODEL?.trim().replace(/^['"]|['"]$/g, "")
+      : process.env.ANTHROPIC_MODEL?.trim().replace(/^['"]|['"]$/g, "");
+  const model =
+    configuredModel ||
+    (provider === "openai" ? "gpt-5.6-terra" : "claude-sonnet-5");
+  const retryPrefix = provider === "openai" ? "OPENAI" : "ANTHROPIC";
+  const maxAttempts = readIntEnv(`${retryPrefix}_RETRY_ATTEMPTS`, 3, 1, 5);
+  const retryDelayMs = readIntEnv(`${retryPrefix}_RETRY_DELAY_MS`, 350, 0, 5000);
   const contextPrompt = buildContextPrompt(body.context);
   const systemPrompt = contextPrompt ? `${SYSTEM_PROMPT} ${contextPrompt}` : SYSTEM_PROMPT;
 
-  const upstreamResult = await requestAnthropicMessages({
-    apiKey,
-    model,
-    systemPrompt,
-    messages,
-    maxAttempts,
-    baseDelayMs: retryDelayMs,
-  });
+  const upstreamResult =
+    provider === "openai"
+      ? await requestOpenAIResponses({
+          apiKey,
+          model,
+          systemPrompt,
+          messages,
+          reasoningEffort: readOpenAiReasoningEffort(),
+          maxAttempts,
+          baseDelayMs: retryDelayMs,
+        })
+      : await requestAnthropicMessages({
+          apiKey,
+          model,
+          systemPrompt,
+          messages,
+          maxAttempts,
+          baseDelayMs: retryDelayMs,
+        });
 
   if ("error" in upstreamResult) {
     return NextResponse.json(
@@ -322,25 +458,47 @@ export async function POST(request: Request) {
             if (data === "[DONE]") continue;
 
             try {
-              const event = JSON.parse(data) as AnthropicStreamEvent;
-              if (
-                event.type === "content_block_delta" &&
-                event.delta?.type === "text_delta" &&
-                event.delta.text
-              ) {
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify({ token: event.delta.text })}\n\n`)
-                );
-              } else if (event.type === "message_stop") {
-                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-              } else if (event.type === "error") {
-                const streamError = normalizeUpstreamErrorMessage(
-                  503,
-                  event.error?.message || "Stream error"
-                );
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify({ error: streamError })}\n\n`)
-                );
+              if (provider === "openai") {
+                const event = JSON.parse(data) as OpenAIStreamEvent;
+                if (event.type === "response.output_text.delta" && event.delta) {
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ token: event.delta })}\n\n`)
+                  );
+                } else if (event.type === "response.completed") {
+                  controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                } else if (event.type === "error" || event.type === "response.failed") {
+                  const streamError = normalizeUpstreamErrorMessage(
+                    503,
+                    event.error?.message ||
+                      event.response?.error?.message ||
+                      event.message ||
+                      "Stream error"
+                  );
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ error: streamError })}\n\n`)
+                  );
+                }
+              } else {
+                const event = JSON.parse(data) as AnthropicStreamEvent;
+                if (
+                  event.type === "content_block_delta" &&
+                  event.delta?.type === "text_delta" &&
+                  event.delta.text
+                ) {
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ token: event.delta.text })}\n\n`)
+                  );
+                } else if (event.type === "message_stop") {
+                  controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                } else if (event.type === "error") {
+                  const streamError = normalizeUpstreamErrorMessage(
+                    503,
+                    event.error?.message || "Stream error"
+                  );
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ error: streamError })}\n\n`)
+                  );
+                }
               }
             } catch {
               // Skip unparseable lines

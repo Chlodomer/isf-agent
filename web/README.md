@@ -19,15 +19,27 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ## Conversational Backend Setup
 
 The chat UI now calls `POST /api/chat` for free-form conversation.
-Set the following environment variables before running `npm run dev`:
+OpenAI is the default provider. Set the following environment variables before running `npm run dev`:
 
 ```bash
-export ANTHROPIC_API_KEY="your_claude_api_key_here"
-# optional (defaults to claude-sonnet-4-20250514)
-export ANTHROPIC_MODEL="claude-sonnet-4-20250514"
+export AI_PROVIDER="openai"
+export OPENAI_API_KEY="your_openai_api_key_here"
+# optional defaults
+export OPENAI_MODEL="gpt-5.6-terra"
+export OPENAI_REASONING_EFFORT="medium"
 ```
 
-Without `ANTHROPIC_API_KEY`, the app will still load but conversation requests will return a configuration error.
+The OpenAI integration uses the Responses API with streaming enabled and `store: false`. Without `OPENAI_API_KEY`, the app will still load but conversation requests will return a configuration error.
+
+Anthropic remains available as a fallback. To switch providers without changing code:
+
+```bash
+export AI_PROVIDER="anthropic"
+export ANTHROPIC_API_KEY="your_claude_api_key_here"
+export ANTHROPIC_MODEL="claude-sonnet-5"
+```
+
+API billing is separate from a ChatGPT or Claude subscription. Keep keys only in `.env.local` or your deployment platform's encrypted environment settings; never commit them to Git.
 
 ## Authentication + Database Setup
 
