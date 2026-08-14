@@ -53,4 +53,22 @@ describe("WorkspaceShell", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Threads" })[0]);
     expect(onOpenSheet).toHaveBeenCalledWith("threads");
   });
+
+  it("marks the rail button for the open sheet as active with text-ink", () => {
+    render(
+      <WorkspaceShell
+        onOpenSheet={() => {}}
+        onOpenSettings={() => {}}
+        onUpload={() => {}}
+        activitySummary={null}
+        activeTab="draft"
+      >
+        <p>chat body</p>
+      </WorkspaceShell>
+    );
+    const draftButtons = screen.getAllByRole("button", { name: "Draft" });
+    expect(draftButtons[0]).toHaveClass("text-ink");
+    const threadsButtons = screen.getAllByRole("button", { name: "Threads" });
+    expect(threadsButtons[0]).toHaveClass("text-muted");
+  });
 });

@@ -88,7 +88,7 @@ function renderMessage(message: ChatMessage, onAction: (action: string) => void)
     case "phase_transition":
       return <PhaseTransitionCard key={message.id} {...message} onAction={onAction} />;
     case "welcome":
-      return <WelcomeCard key={message.id} onAction={onAction} />;
+      return <WelcomeCard key={message.id} />;
     case "resume_session":
       return <ResumeSessionCard key={message.id} {...message} onAction={onAction} />;
     case "file_upload":
@@ -129,7 +129,7 @@ export default function MessageThread({ messages, onAction, isLoading, phase }: 
         <details className="group mb-2">
           <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-hairline-strong bg-surface px-3 py-1 text-xs font-medium text-body transition-colors hover:bg-bubble [&::-webkit-details-marker]:hidden">
             <Sparkles size={12} />
-            Show quick-start actions
+            Show welcome message
           </summary>
           <div className="mt-2 space-y-2">
             {hiddenWelcomeMessages.map((message) => renderMessage(message, onAction))}

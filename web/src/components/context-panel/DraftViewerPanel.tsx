@@ -89,7 +89,7 @@ export default function DraftViewerPanel() {
               <div key={key} className="border-b border-hairline">
                 <button
                   onClick={() => setExpanded(isExpanded ? null : key)}
-                  className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-canvas"
+                  className="flex w-full items-center gap-2 px-4 py-3 text-start transition-colors hover:bg-canvas"
                   disabled={!hasDraft}
                 >
                   <div className="flex-shrink-0">

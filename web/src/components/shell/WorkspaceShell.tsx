@@ -20,16 +20,19 @@ interface WorkspaceShellProps {
   onOpenSettings: () => void;
   onUpload: () => void;
   activitySummary: string | null;
+  activeTab?: ContextTab | null;
   children: React.ReactNode;
 }
 
 function RailButton({
   label,
   onClick,
+  active,
   children,
 }: {
   label: string;
   onClick: () => void;
+  active?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -37,7 +40,7 @@ function RailButton({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="text-muted transition-colors hover:text-ink"
+      className={`transition-colors hover:text-ink ${active ? "text-ink" : "text-muted"}`}
     >
       {children}
     </button>
@@ -49,9 +52,17 @@ export default function WorkspaceShell({
   onOpenSettings,
   onUpload,
   activitySummary,
+  activeTab = null,
   children,
 }: WorkspaceShellProps) {
   const phase = useProposalStore((s) => s.session.currentPhase);
+
+  const isJourneyActive = activeTab === "journey" || activeTab === "operations";
+  const isThreadsActive = activeTab === "threads";
+  const isDraftActive = activeTab === "draft";
+  const isLearningsActive = activeTab === "learnings" || activeTab === "interview";
+  const isComplianceActive = activeTab === "compliance" || activeTab === "readiness";
+  const isHistoryActive = activeTab === "history";
 
   return (
     <div className="relative flex h-screen bg-canvas">
@@ -62,7 +73,7 @@ export default function WorkspaceShell({
       <nav className="hidden w-12 shrink-0 flex-col items-center gap-5 border-e border-hairline bg-rail-wash py-4 lg:flex">
         <Logo size={24} />
         <PhaseDots currentPhase={phase} onSelect={() => onOpenSheet("journey")} />
-        <RailButton label="Threads" onClick={() => onOpenSheet("threads")}>
+        <RailButton label="Threads" onClick={() => onOpenSheet("threads")} active={isThreadsActive}>
           <MessagesSquare size={16} strokeWidth={1.5} />
         </RailButton>
         <RailButton label="Upload a document" onClick={onUpload}>
@@ -87,16 +98,16 @@ export default function WorkspaceShell({
 
       {/* Right rail: work surfaces */}
       <nav className="hidden w-12 shrink-0 flex-col items-center gap-5 border-s border-hairline bg-rail-wash py-4 lg:flex">
-        <RailButton label="Draft" onClick={() => onOpenSheet("draft")}>
+        <RailButton label="Draft" onClick={() => onOpenSheet("draft")} active={isDraftActive}>
           <FileText size={16} strokeWidth={1.5} />
         </RailButton>
-        <RailButton label="Insights" onClick={() => onOpenSheet("learnings")}>
+        <RailButton label="Insights" onClick={() => onOpenSheet("learnings")} active={isLearningsActive}>
           <Lightbulb size={16} strokeWidth={1.5} />
         </RailButton>
-        <RailButton label="Compliance" onClick={() => onOpenSheet("compliance")}>
+        <RailButton label="Compliance" onClick={() => onOpenSheet("compliance")} active={isComplianceActive}>
           <ClipboardCheck size={16} strokeWidth={1.5} />
         </RailButton>
-        <RailButton label="History" onClick={() => onOpenSheet("history")}>
+        <RailButton label="History" onClick={() => onOpenSheet("history")} active={isHistoryActive}>
           <History size={16} strokeWidth={1.5} />
         </RailButton>
       </nav>
@@ -104,25 +115,25 @@ export default function WorkspaceShell({
       {/* Mobile bottom bar (below lg): same triggers, horizontal */}
       <nav className="absolute inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-hairline bg-rail-wash py-2 lg:hidden">
         <Logo size={20} />
-        <RailButton label="Journey" onClick={() => onOpenSheet("journey")}>
+        <RailButton label="Journey" onClick={() => onOpenSheet("journey")} active={isJourneyActive}>
           <span className="ui-label">Phase {phase}/7</span>
         </RailButton>
-        <RailButton label="Threads" onClick={() => onOpenSheet("threads")}>
+        <RailButton label="Threads" onClick={() => onOpenSheet("threads")} active={isThreadsActive}>
           <MessagesSquare size={16} strokeWidth={1.5} />
         </RailButton>
         <RailButton label="Upload a document" onClick={onUpload}>
           <Upload size={16} strokeWidth={1.5} />
         </RailButton>
-        <RailButton label="Draft" onClick={() => onOpenSheet("draft")}>
+        <RailButton label="Draft" onClick={() => onOpenSheet("draft")} active={isDraftActive}>
           <FileText size={16} strokeWidth={1.5} />
         </RailButton>
-        <RailButton label="Insights" onClick={() => onOpenSheet("learnings")}>
+        <RailButton label="Insights" onClick={() => onOpenSheet("learnings")} active={isLearningsActive}>
           <Lightbulb size={16} strokeWidth={1.5} />
         </RailButton>
-        <RailButton label="Compliance" onClick={() => onOpenSheet("compliance")}>
+        <RailButton label="Compliance" onClick={() => onOpenSheet("compliance")} active={isComplianceActive}>
           <ClipboardCheck size={16} strokeWidth={1.5} />
         </RailButton>
-        <RailButton label="History" onClick={() => onOpenSheet("history")}>
+        <RailButton label="History" onClick={() => onOpenSheet("history")} active={isHistoryActive}>
           <History size={16} strokeWidth={1.5} />
         </RailButton>
         <RailButton label="Settings" onClick={onOpenSettings}>

@@ -65,7 +65,7 @@ export default function ChatInput({
       onDrop={handleDrop}
     >
       {isDragOver && (
-        <div className="absolute inset-4 z-10 flex items-center justify-center rounded-[24px] border-2 border-dashed border-teal bg-surface/95">
+        <div className="absolute inset-4 z-10 flex items-center justify-center rounded-[24px] border-2 border-dashed border-hairline-strong bg-surface/95">
           <p className="font-sans text-[13.5px] font-medium text-ink">
             Drop your proposal, CV, or review file here
           </p>

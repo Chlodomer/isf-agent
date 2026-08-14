@@ -114,7 +114,7 @@ export default function ThreadColumn({
                   </div>
                 </button>
 
-                <div className="mt-2 flex items-center justify-end gap-3 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                <div className="mt-2 flex items-center justify-end gap-3 opacity-0 transition-opacity max-lg:opacity-100 focus-within:opacity-100 group-hover:opacity-100">
                   <button
                     onClick={() => {
                       const proposed = window.prompt("Rename thread", thread.title);

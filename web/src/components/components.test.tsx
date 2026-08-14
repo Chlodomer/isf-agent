@@ -99,7 +99,7 @@ describe("component coverage and failure/security behaviors", () => {
     ];
     render(<MessageThread messages={messages} onAction={vi.fn()} />);
     expect(screen.getByText(/i'm granite/i)).not.toBeVisible();
-    expect(screen.getByText(/show quick-start actions/i)).toBeInTheDocument();
+    expect(screen.getByText(/show welcome message/i)).toBeInTheDocument();
     expect(screen.getByText(/next step guidance/i)).toBeInTheDocument();
   });
 
@@ -217,7 +217,7 @@ describe("component coverage and failure/security behaviors", () => {
   });
 
   it("WelcomeCard renders a short bare greeting", () => {
-    render(<WelcomeCard onAction={vi.fn()} />);
+    render(<WelcomeCard />);
     expect(screen.getByText(/i'm granite/i)).toBeInTheDocument();
   });
 

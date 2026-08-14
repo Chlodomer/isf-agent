@@ -16,6 +16,7 @@ import {
   SECTION_LABELS,
   TOTAL_INTERVIEW_QUESTIONS,
   type ChatMessage,
+  type ContextTab,
   type Phase,
   type SectionName,
   type VersionSnapshot,
@@ -1235,10 +1236,18 @@ export default function ProposalWorkspace() {
   return (
     <>
       <WorkspaceShell
-        onOpenSheet={(tab) => openContextPanel(tab)}
+        onOpenSheet={(tab) => {
+          const normalize = (t: ContextTab) => (t === "operations" ? "journey" : t);
+          if (contextPanelOpen && normalize(activeContextTab) === normalize(tab)) {
+            toggleContextPanel();
+          } else {
+            openContextPanel(tab);
+          }
+        }}
         onOpenSettings={() => setSettingsOpen(true)}
         onUpload={() => handleAction("upload-first")}
         activitySummary={activitySummary}
+        activeTab={contextPanelOpen ? activeContextTab : null}
       >
         <MainChat
           onAction={handleAction}

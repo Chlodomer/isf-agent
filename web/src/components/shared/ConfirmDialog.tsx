@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -29,12 +29,19 @@ export default function ConfirmDialog({
     if (open) cancelRef.current?.focus();
   }, [open]);
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
-    },
-    [onCancel]
-  );
+  // Capture-phase listener so this (topmost) dialog always intercepts Escape
+  // before an ancestor Sheet's bubble-phase handler sees it, regardless of
+  // mount order — preventDefault signals the Sheet to skip closing itself.
+  useEffect(() => {
+    if (!open) return;
+    const handler = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      onCancel();
+    };
+    document.addEventListener("keydown", handler, true);
+    return () => document.removeEventListener("keydown", handler, true);
+  }, [open, onCancel]);
 
   if (!open) return null;
 
@@ -44,10 +51,7 @@ export default function ConfirmDialog({
       : "font-sans text-xs text-ink underline underline-offset-2 transition-colors hover:text-muted";
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-canvas/60"
-      onKeyDown={handleKeyDown}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-canvas/60">
       <div className="w-full max-w-sm rounded-[12px] border border-hairline-strong bg-surface shadow-[0_24px_64px_rgba(26,24,21,0.12)]">
         <div className="px-7 py-5">
           <h3 className="font-serif text-lg text-ink">{title}</h3>

@@ -1,10 +1,6 @@
 "use client";
 
-interface WelcomeCardProps {
-  onAction?: (action: string) => void;
-}
-
-export default function WelcomeCard({}: WelcomeCardProps) {
+export default function WelcomeCard() {
   return (
     <p className="my-3 font-serif text-[15px] leading-relaxed text-ink">
       Welcome. I&apos;m Granite — I help you think through and write an ISF proposal that can
